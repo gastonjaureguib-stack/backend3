@@ -22,6 +22,10 @@ class UserRepository {
     return User.create(userData);
   }
 
+  async createMany(usersData) {
+    return User.insertMany(usersData);
+  }
+
   async update(id, userData) {
     return User.findByIdAndUpdate(
       id,

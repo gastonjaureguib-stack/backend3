@@ -18,6 +18,10 @@ class ProductRepository {
     return Product.create(productData);
   }
 
+  async createMany(productsData) {
+    return Product.insertMany(productsData);
+  }
+
   async update(id, productData) {
     return Product.findByIdAndUpdate(
       id,
