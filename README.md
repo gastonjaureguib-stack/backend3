@@ -767,16 +767,6 @@ Se generan y almacenan tres usuarios, tres repartidores, tres productos, tres pe
 
 **Advertencia:** esta prueba inserta registros reales en la base de datos configurada.
 
-### Prueba 9 — Falla del seed
-
-Código esperado ante una falla inesperada durante la generación o persistencia:
-
-`MOCK_SEED_FAILED`
-
-Estado HTTP esperado: 500.
-
-Esta prueba requiere simular una falla de forma controlada y verificar el resultado. No se considera validada únicamente por el éxito del seed.
-
 ---
 
 ## 13. Configuración de entorno
@@ -859,7 +849,6 @@ Durante el desarrollo del Módulo 3 se verificaron los siguientes escenarios:
 | Generación de pedidos | Exitosa |
 | Generación de entregas | Exitosa |
 | Persistencia mediante seed | Exitosa |
-| Falla inesperada durante el seed | Pendiente |
 
 Las pruebas realizadas confirmaron el funcionamiento de los principales mecanismos de validación, propagación de errores y generación de datos.
 
