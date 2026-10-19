@@ -1,122 +1,144 @@
-# 🌱 ShipNow - Backend III
+
+# 🌱 ShipNow — Backend III
 
 API REST desarrollada como parte del curso **Backend III de Coderhouse**.
 
-ShipNow se plantea como una tienda online de plantas y productos relacionados con jardinería. El proyecto utiliza una arquitectura profesional por capas y se amplía progresivamente durante el curso.
+ShipNow simula el backend de una tienda online de plantas y productos de jardinería.
+
+El proyecto utiliza una arquitectura por capas, persistencia en MongoDB, generación de datos simulados y un sistema centralizado de manejo de errores.
 
 ---
 
-# Pre-entrega Módulo 1 — Arquitectura por capas
+## 1. Objetivos del proyecto
 
-El objetivo de la primera etapa fue refactorizar la API utilizando una arquitectura de tres capas:
+El proyecto se desarrolla progresivamente mediante tres módulos.
+
+### Módulo 1 — Arquitectura por capas
+
+Implementación de una API REST organizada mediante:
 
 **Controller → Service → Repository**
 
-La aplicación separa las responsabilidades HTTP, la lógica de negocio y el acceso a MongoDB para obtener un código organizado, mantenible y escalable.
+Funcionalidades:
 
----
+- CRUD de usuarios.
+- CRUD de productos.
+- Persistencia en MongoDB.
+- Validaciones mediante Zod.
+- Configuración de entorno.
+- Constantes centralizadas.
+- Contraseñas protegidas con bcrypt.
 
-# Pre-entrega Módulo 2 — Mocking y carga de datos
+### Módulo 2 — Mocking y carga de datos
 
-En el segundo módulo se incorporó un sistema de **mocking** que permite generar datos simulados para probar la aplicación sin depender de información cargada manualmente.
+Implementación de un sistema de generación de información simulada mediante Faker.
 
-El módulo permite generar:
+Permite generar:
 
 - Usuarios.
 - Repartidores.
-- Productos (plantas).
+- Productos.
 - Pedidos.
 - Entregas.
 
-Los datos simulados respetan los modelos y constantes reales del proyecto.
+Los datos pueden generarse en memoria o persistirse en MongoDB mediante un endpoint de seed.
 
-También se mantienen las relaciones entre las entidades:
+### Módulo 3 — Manejo profesional de errores
 
-```text
-Usuario
-   ↓
-Pedido ← Producto
-   ↓
-Entrega
-   ↓
-Repartidor
-```
+Implementación de un sistema centralizado de errores mediante:
 
-Los endpoints `GET /api/mocks/...` generan información únicamente en memoria y **no la almacenan en MongoDB**.
-
-El endpoint `POST /api/mocks/seed` genera los datos y los **persiste en MongoDB**, manteniendo las relaciones mediante ObjectIds reales.
+- Clase personalizada `AppError`.
+- Diccionario de errores.
+- Middleware global de errores.
+- Errores específicos del dominio.
+- Validaciones HTTP.
+- Propagación de errores desde los services.
+- Manejo de fallas durante el seed.
+- Respuestas HTTP uniformes.
 
 ---
 
-# Tecnologías utilizadas
+## 2. Tecnologías utilizadas
 
 - Node.js
 - Express
 - MongoDB
 - Mongoose
-- dotenv
+- JavaScript ES Modules
 - Zod
 - bcrypt
 - Faker (`@faker-js/faker`)
+- dotenv
 
 ---
 
-# Arquitectura
+## 3. Arquitectura
 
-El proyecto utiliza el siguiente flujo general:
+La aplicación utiliza una arquitectura por capas.
 
 ```text
-Request
-   ↓
-Routes
-   ↓
-Middlewares
-   ↓
-Controller
-   ↓
-Service
-   ↓
-Repository
-   ↓
-Model
-   ↓
-MongoDB
+Request HTTP
+     |
+     v
+   Routes
+     |
+     v
+ Middlewares
+     |
+     v
+ Controllers
+     |
+     v
+  Services
+     |
+     v
+ Repositories
+     |
+     v
+   Models
+     |
+     v
+  MongoDB
 ```
 
-## Controller
+### Controllers
 
-Es la puerta de entrada HTTP.
+Reciben las solicitudes HTTP, ejecutan los services y construyen las respuestas.
 
-Su responsabilidad es recibir `req`, extraer los datos necesarios, llamar al Service y construir la respuesta HTTP correspondiente.
+No contienen consultas directas a MongoDB ni lógica de negocio.
 
-Los Controllers no realizan consultas directas a MongoDB ni contienen lógica de negocio.
+Los errores se propagan mediante `next(error)`.
 
-## Service
+### Services
 
-Contiene la lógica de negocio de la aplicación.
+Contienen la lógica de negocio.
 
-Por ejemplo:
+Entre sus responsabilidades se encuentran:
 
-- Determinar el estado de un producto según su stock.
-- Evitar la creación de usuarios con emails ya registrados.
-- Procesar contraseñas antes de almacenarlas.
-- Controlar filtros permitidos para productos.
-- Coordinar la generación y carga de datos simulados.
-- Mantener las relaciones entre usuarios, productos, pedidos, entregas y repartidores durante el seed.
+- Validar reglas de negocio.
+- Evitar usuarios con emails duplicados.
+- Determinar el estado de productos según su stock.
+- Coordinar la generación de mocks.
+- Gestionar la carga de datos simulados.
+- Detectar y lanzar errores personalizados.
 
-El Service no realiza consultas directamente mediante Mongoose. Para acceder a los datos utiliza los Repositories.
+### Repositories
 
-## Repository
+Realizan las operaciones de persistencia mediante Mongoose.
 
-Es la capa encargada del acceso a datos.
+Permiten separar la lógica de negocio del acceso a MongoDB.
 
-Es el único lugar de cada entidad donde se realizan operaciones mediante los modelos de Mongoose, como búsquedas, creación, actualización, eliminación y carga masiva.
+### Middlewares
 
-De esta manera, la lógica de negocio queda separada de la forma en que los datos son almacenados.
+Se encargan de tareas transversales como:
+
+- Validar datos con Zod.
+- Validar identificadores de MongoDB.
+- Procesar errores de manera centralizada.
 
 ---
 
-# Estructura del proyecto
+## 4. Estructura del proyecto
 
 ```text
 src/
@@ -156,7 +178,8 @@ src/
 │   ├── product.service.js
 │   └── user.service.js
 ├── utils/
-│   └── AppError.js
+│   ├── AppError.js
+│   └── errorDictionary.js
 ├── validations/
 │   ├── product.validation.js
 │   └── user.validation.js
@@ -166,11 +189,33 @@ src/
 
 ---
 
-# Entidades
+## 5. Entidades
 
-## Products
+### Users
 
-Los productos representan las plantas disponibles en ShipNow.
+Representan usuarios de la aplicación.
+
+Campos principales:
+
+- `firstName`
+- `lastName`
+- `email`
+- `password`
+- `role`
+
+Roles:
+
+- `ADMIN`
+- `USER`
+- `DRIVER`
+
+Las contraseñas se almacenan utilizando bcrypt.
+
+Los endpoints normales de consulta no devuelven la contraseña.
+
+### Products
+
+Representan plantas disponibles en ShipNow.
 
 Campos principales:
 
@@ -181,56 +226,21 @@ Campos principales:
 - `stock`
 - `status`
 
-Los estados se encuentran centralizados mediante constantes:
+Estados:
 
-```text
-AVAILABLE
-OUT_OF_STOCK
-```
+- `AVAILABLE`
+- `OUT_OF_STOCK`
 
-El estado se determina a partir del stock:
+El estado se determina según el stock:
 
 ```text
 stock > 0 → available
 stock = 0 → out_of_stock
 ```
 
-Los mocks de productos mantienen el dominio de ShipNow generando plantas y categorías relacionadas con jardinería.
+### Orders
 
----
-
-## Users
-
-Los usuarios contienen:
-
-- `firstName`
-- `lastName`
-- `email`
-- `password`
-- `role`
-
-Los roles se encuentran centralizados mediante constantes:
-
-```text
-ADMIN
-USER
-DRIVER
-```
-
-`DRIVER` representa a los usuarios que cumplen el rol de repartidores.
-
-Además:
-
-- El email debe ser único.
-- Las contraseñas se almacenan utilizando bcrypt.
-- La contraseña no se devuelve en los endpoints normales de consulta.
-- Las contraseñas generadas durante el seed también son hasheadas antes de persistirse.
-
----
-
-## Orders
-
-Los pedidos representan compras de plantas realizadas por los usuarios.
+Representan pedidos realizados por los usuarios.
 
 Campos principales:
 
@@ -240,35 +250,25 @@ Campos principales:
 - `priority`
 - `total`
 
-Cada pedido mantiene una referencia al usuario que realizó la compra y a los productos incluidos.
-
-Los estados y prioridades permitidos se encuentran centralizados en constantes.
-
 Estados:
 
-```text
-PENDING
-PROCESSING
-SHIPPED
-DELIVERED
-CANCELLED
-```
+- `PENDING`
+- `PROCESSING`
+- `SHIPPED`
+- `DELIVERED`
+- `CANCELLED`
 
 Prioridades:
 
-```text
-LOW
-MEDIUM
-HIGH
-```
+- `LOW`
+- `MEDIUM`
+- `HIGH`
 
-El total del pedido se calcula a partir del precio del producto y la cantidad simulada.
+Los pedidos mantienen referencias a usuarios y productos.
 
----
+### Deliveries
 
-## Deliveries
-
-Las entregas representan el envío de los pedidos.
+Representan las entregas de los pedidos.
 
 Campos principales:
 
@@ -277,76 +277,179 @@ Campos principales:
 - `status`
 - `deliveryAddress`
 
-Cada entrega se relaciona con un pedido y con un usuario cuyo rol es `DRIVER`.
-
 Estados:
 
-```text
-PENDING
-ASSIGNED
-IN_TRANSIT
-DELIVERED
-CANCELLED
-```
+- `PENDING`
+- `ASSIGNED`
+- `IN_TRANSIT`
+- `DELIVERED`
+- `CANCELLED`
 
-Un pedido puede tener una única entrega.
+Cada entrega mantiene referencias al pedido y al repartidor correspondiente.
 
 ---
 
-# Constantes
+## 6. Constantes
 
-Los valores utilizados para roles, estados, prioridades y estados de respuesta se encuentran centralizados en:
+Los roles, estados y prioridades están centralizados en:
 
-```text
-src/constants/index.js
-```
+`src/constants/index.js`
 
-Se utilizan constantes para evitar literales repetidos y mantener consistencia entre modelos, servicios, mocks y controladores.
+Constantes principales:
 
-Entre ellas:
+- `USER_ROLES`
+- `PRODUCT_STATUS`
+- `ORDER_STATUS`
+- `ORDER_PRIORITY`
+- `DELIVERY_STATUS`
+- `RESPONSE_STATUS`
 
-```text
-USER_ROLES
-PRODUCT_STATUS
-ORDER_STATUS
-ORDER_PRIORITY
-DELIVERY_STATUS
-RESPONSE_STATUS
-```
+Esto evita repetir valores literales y mantiene consistencia entre modelos, services y mocks.
 
 ---
 
-# Mocking
+## 7. Endpoints de usuarios
 
-El módulo de mocking utiliza **Faker** para generar información ficticia.
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/users` | Obtener usuarios |
+| GET | `/api/users/:id` | Obtener usuario por ID |
+| POST | `/api/users` | Crear usuario |
+| PATCH | `/api/users/:id` | Actualizar usuario |
+| DELETE | `/api/users/:id` | Eliminar usuario |
 
-Los generadores se encuentran en:
+### Ejemplo de creación
 
-```text
-src/mocks/
+**POST /api/users**
+
+```json
+{
+  "firstName": "Ana",
+  "lastName": "Pérez",
+  "email": "ana@example.com",
+  "password": "12345678"
+}
 ```
 
-Los mocks permiten trabajar de dos maneras.
+El usuario se crea con rol `USER` por defecto.
 
-## Generación sin persistencia
+La contraseña se procesa con bcrypt antes de almacenarse.
 
-Los endpoints `GET` generan datos simulados en memoria.
+---
 
-Estos datos se devuelven en la respuesta HTTP pero **no son insertados en MongoDB**.
+## 8. Endpoints de productos
 
-Los pedidos y entregas utilizan ObjectIds simulados para conservar una estructura equivalente a los documentos reales.
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/products` | Obtener productos |
+| GET | `/api/products/:id` | Obtener producto por ID |
+| POST | `/api/products` | Crear producto |
+| PATCH | `/api/products/:id` | Actualizar producto |
+| DELETE | `/api/products/:id` | Eliminar producto |
 
-## Seed con persistencia
+### Filtros
+
+El listado de productos permite filtrar por:
+
+- `category`
+- `status`
+
+Ejemplos:
+
+```http
+GET /api/products?category=interior
+GET /api/products?status=available
+```
+
+### Ejemplo de creación
+
+**POST /api/products**
+
+```json
+{
+  "name": "Monstera Deliciosa",
+  "description": "Planta tropical de interior",
+  "category": "interior",
+  "price": 850,
+  "stock": 5
+}
+```
+
+El service determina automáticamente el estado del producto según su stock.
+
+---
+
+## 9. Módulo de mocking
+
+El sistema utiliza Faker para generar datos simulados.
+
+Los endpoints GET generan información en memoria y no realizan inserciones en MongoDB.
+
+### Endpoints
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/mocks/users` | Generar usuarios |
+| GET | `/api/mocks/drivers` | Generar repartidores |
+| GET | `/api/mocks/products` | Generar productos |
+| GET | `/api/mocks/orders` | Generar pedidos |
+| GET | `/api/mocks/deliveries` | Generar entregas |
+| POST | `/api/mocks/seed` | Persistir datos simulados |
+
+### Ejemplos
+
+```http
+GET /api/mocks/users?qty=5
+GET /api/mocks/drivers?qty=5
+GET /api/mocks/products?qty=5
+GET /api/mocks/orders?qty=5
+GET /api/mocks/deliveries?qty=5
+```
+
+El parámetro `qty` determina la cantidad de registros generados.
+
+Si no se proporciona, se utiliza un valor predeterminado de 10.
+
+Las cantidades inválidas generan un error HTTP 400.
+
+### Generación de pedidos
+
+Los pedidos simulados utilizan usuarios y productos generados por Faker.
+
+Se seleccionan únicamente productos con stock positivo.
+
+El generador de productos garantiza al menos un producto disponible cuando se genera un lote no vacío.
+
+Cada pedido incluye:
+
+- Usuario.
+- Producto.
+- Cantidad.
+- Estado.
+- Prioridad.
+- Total.
+
+### Generación de entregas
+
+Las entregas se generan a partir de pedidos y repartidores simulados.
+
+Mantienen las referencias correspondientes mediante ObjectIds.
+
+---
+
+## 10. Seed de MongoDB
 
 El endpoint:
 
 ```http
-POST /api/mocks/seed
+POST /api/mocks/seed?qty=3
 ```
 
-genera e inserta registros en MongoDB.
+genera y almacena datos simulados en MongoDB.
 
-La carga se realiza en un orden que permite conservar las relaciones:
+No requiere body.
+
+### Orden de persistencia
 
 ```text
 1. Usuarios
@@ -356,141 +459,15 @@ La carga se realiza en un orden que permite conservar las relaciones:
 5. Entregas
 ```
 
-Primero se crean usuarios, repartidores y productos.
+Los pedidos utilizan los ObjectIds reales de usuarios y productos.
 
-Luego sus ObjectIds reales se utilizan para crear los pedidos.
+Las entregas utilizan los ObjectIds reales de pedidos y repartidores.
 
-Finalmente, los ObjectIds de los pedidos y repartidores se utilizan para crear las entregas.
+Las contraseñas de los usuarios y repartidores son hasheadas antes de almacenarse.
 
----
+### Respuesta exitosa
 
-# Endpoints
-
-## Products
-
-```text
-GET     /api/products
-GET     /api/products/:id
-POST    /api/products
-PATCH   /api/products/:id
-DELETE  /api/products/:id
-```
-
-El listado permite filtrar por:
-
-```text
-category
-status
-```
-
-Ejemplos:
-
-```text
-GET /api/products?category=interior
-GET /api/products?status=available
-```
-
----
-
-## Users
-
-```text
-GET     /api/users
-GET     /api/users/:id
-POST    /api/users
-PATCH   /api/users/:id
-DELETE  /api/users/:id
-```
-
----
-
-# Endpoints de Mocking
-
-Todos los endpoints se encuentran bajo:
-
-```text
-/api/mocks
-```
-
-## Generar usuarios
-
-```http
-GET /api/mocks/users?qty=3
-```
-
-Genera usuarios con rol `USER`.
-
-No guarda información en MongoDB.
-
----
-
-## Generar repartidores
-
-```http
-GET /api/mocks/drivers?qty=3
-```
-
-Genera usuarios con rol `DRIVER`.
-
-No guarda información en MongoDB.
-
----
-
-## Generar productos
-
-```http
-GET /api/mocks/products?qty=3
-```
-
-Genera plantas ficticias con precio, stock y estado coherente.
-
-No guarda información en MongoDB.
-
----
-
-## Generar pedidos
-
-```http
-GET /api/mocks/orders?qty=3
-```
-
-Genera pedidos simulados relacionados con usuarios y productos ficticios.
-
-No guarda información en MongoDB.
-
----
-
-## Generar entregas
-
-```http
-GET /api/mocks/deliveries?qty=3
-```
-
-Genera entregas relacionadas con pedidos y repartidores ficticios.
-
-No guarda información en MongoDB.
-
----
-
-## Cargar datos de prueba en MongoDB
-
-```http
-POST /api/mocks/seed?qty=3
-```
-
-No requiere body.
-
-Genera y persiste:
-
-```text
-3 usuarios
-3 repartidores
-3 productos
-3 pedidos
-3 entregas
-```
-
-Ejemplo de respuesta:
+HTTP 201:
 
 ```json
 {
@@ -506,77 +483,317 @@ Ejemplo de respuesta:
 }
 ```
 
-Si no se proporciona `qty`, se utiliza una cantidad predeterminada de `10`.
+### Manejo de errores durante el seed
+
+La función `seedMockData()` utiliza `try/catch` para controlar errores durante la generación y persistencia.
+
+Los errores de dominio identificados se conservan.
+
+Los errores inesperados se registran en la consola del servidor y se convierten en `MOCK_SEED_FAILED`.
+
+**Limitación:** el seed no utiliza transacciones de MongoDB. Si una operación falla después de que otras se completaron, pueden permanecer registros parcialmente insertados.
 
 ---
 
-# Validaciones
+## 11. Módulo 3 — Manejo profesional de errores
 
-La API utiliza **Zod** para validar los datos recibidos en los endpoints de Users y Products antes de que lleguen al Controller.
+ShipNow implementa un sistema centralizado de errores para evitar respuestas inconsistentes y separar la detección de errores de su presentación HTTP.
 
-Se validan, entre otras cosas:
+### Clase AppError
 
-- Campos obligatorios.
-- Formato de email.
-- Longitudes de strings.
-- Precio no negativo.
-- Stock entero y no negativo.
-- Actualizaciones con al menos un campo.
+Ubicación:
 
-También se valida el formato de los identificadores de MongoDB antes de realizar consultas por ID.
+`src/utils/AppError.js`
 
-Esto permite diferenciar errores como:
+La clase `AppError` extiende la clase nativa `Error` de JavaScript.
+
+Permite crear errores personalizados a partir de códigos definidos en el diccionario.
+
+Ejemplo:
+
+```javascript
+throw new AppError("USER_NOT_FOUND");
+```
+
+También permite especificar un mensaje personalizado:
+
+```javascript
+throw new AppError(
+  "VALIDATION_ERROR",
+  "El email no tiene un formato válido"
+);
+```
+
+### Diccionario de errores
+
+Ubicación:
+
+`src/utils/errorDictionary.js`
+
+Centraliza:
+
+- Código del error.
+- Estado HTTP.
+- Mensaje descriptivo.
+
+Esto permite mantener consistencia entre los distintos módulos.
+
+### Errores definidos
+
+| Código | HTTP | Descripción |
+|--------|------|-------------|
+| `INTERNAL_SERVER_ERROR` | 500 | Error interno inesperado |
+| `ROUTE_NOT_FOUND` | 404 | Ruta inexistente |
+| `VALIDATION_ERROR` | 400 | Datos inválidos |
+| `INVALID_OBJECT_ID` | 400 | Identificador MongoDB inválido |
+| `USER_NOT_FOUND` | 404 | Usuario inexistente |
+| `EMAIL_ALREADY_EXISTS` | 409 | Email duplicado |
+| `PRODUCT_NOT_FOUND` | 404 | Producto inexistente |
+| `INVALID_PRODUCT_STATUS` | 400 | Estado de producto inválido |
+| `INVALID_MOCK_QUANTITY` | 400 | Cantidad de mocks inválida |
+| `MOCK_DATA_REQUIRED` | 400 | Faltan datos para generar pedidos |
+| `MOCK_PRODUCT_OUT_OF_STOCK` | 400 | No hay productos disponibles |
+| `MOCK_SEED_FAILED` | 500 | Fallo inesperado durante el seed |
+
+### Middleware global
+
+Ubicación:
+
+`src/middlewares/error.middleware.js`
+
+El middleware recibe los errores propagados desde la aplicación.
+
+Distingue entre:
+
+1. Errores personalizados de tipo `AppError`.
+2. Errores inesperados del servidor.
+
+Los errores personalizados utilizan el estado HTTP, código y mensaje definidos.
+
+Los errores inesperados devuelven HTTP 500 y no exponen información técnica sensible al cliente.
+
+### Formato uniforme de respuesta
+
+Las respuestas de error utilizan esta estructura:
+
+```json
+{
+  "status": "error",
+  "code": "USER_NOT_FOUND",
+  "message": "Usuario no encontrado"
+}
+```
+
+### Propagación de errores
+
+Los services detectan las situaciones inválidas y lanzan errores.
+
+Los controllers utilizan `next(error)` para propagarlos.
+
+El middleware global construye la respuesta HTTP.
+
+Flujo:
 
 ```text
-400 → datos o identificadores inválidos
-404 → recurso no encontrado
-409 → conflicto
-500 → error interno inesperado
+Request
+   |
+   v
+Middleware / Controller
+   |
+   v
+Service
+   |
+   v
+AppError
+   |
+   v
+next(error)
+   |
+   v
+Global Error Middleware
+   |
+   v
+HTTP Response
 ```
+
+### Validaciones con Zod
+
+Ubicación:
+
+`src/middlewares/validate.middleware.js`
+
+El middleware utiliza `safeParse()` para validar los datos recibidos.
+
+Cuando la validación falla, genera un error `VALIDATION_ERROR` y conserva los mensajes específicos de Zod.
+
+### Validación de ObjectId
+
+Ubicación:
+
+`src/middlewares/validateObjectId.middleware.js`
+
+Comprueba que los identificadores recibidos tengan un formato válido de MongoDB.
+
+Si el identificador es inválido, genera `INVALID_OBJECT_ID`.
+
+### Rutas inexistentes
+
+En `src/app.js` se incorpora un middleware que detecta solicitudes que no coinciden con ninguna ruta registrada.
+
+Estas solicitudes generan `ROUTE_NOT_FOUND`.
+
+El middleware global de errores se registra al final de la configuración de Express.
 
 ---
 
-# Configuración de entorno
+## 12. Pruebas del manejo de errores
 
-Las variables de entorno se gestionan de forma centralizada mediante:
+Las siguientes pruebas permiten verificar el comportamiento del sistema.
 
-```text
-src/config/env.config.js
+Se pueden realizar desde el navegador, Postman o Thunder Client, según el método HTTP utilizado.
+
+### Prueba 1 — Cantidad negativa
+
+```http
+GET /api/mocks/users?qty=-5
 ```
 
-La aplicación valida al iniciar que estén definidas:
+Resultado esperado: HTTP 400.
 
-```text
-PORT
-MONGODB_URI
-NODE_ENV
+```json
+{
+  "status": "error",
+  "code": "INVALID_MOCK_QUANTITY",
+  "message": "La cantidad de mocks debe ser un número entero positivo"
+}
 ```
 
-Si falta alguna variable crítica, la aplicación muestra un error descriptivo y no inicia.
+### Prueba 2 — ObjectId inválido
 
-No se utiliza `process.env` directamente fuera del módulo de configuración.
+```http
+GET /api/products/abc123
+```
+
+Resultado esperado: HTTP 400.
+
+```json
+{
+  "status": "error",
+  "code": "INVALID_OBJECT_ID",
+  "message": "El ID proporcionado no es válido"
+}
+```
+
+### Prueba 3 — Producto inexistente
+
+```http
+GET /api/products/507f1f77bcf86cd799439011
+```
+
+Resultado esperado, si el ID no existe en la base de datos: HTTP 404.
+
+```json
+{
+  "status": "error",
+  "code": "PRODUCT_NOT_FOUND",
+  "message": "Producto no encontrado"
+}
+```
+
+### Prueba 4 — Ruta inexistente
+
+```http
+GET /api/ruta-inexistente
+```
+
+Resultado esperado: HTTP 404.
+
+```json
+{
+  "status": "error",
+  "code": "ROUTE_NOT_FOUND",
+  "message": "Ruta no encontrada"
+}
+```
+
+### Prueba 5 — Validación de Zod
+
+```http
+POST /api/users
+Content-Type: application/json
+```
+
+Body:
+
+```json
+{
+  "email": "correo-invalido"
+}
+```
+
+Resultado esperado: HTTP 400.
+
+La respuesta incluye el código `VALIDATION_ERROR` y los mensajes correspondientes a los campos inválidos.
+
+### Prueba 6 — Generación de pedidos
+
+```http
+GET /api/mocks/orders?qty=10
+```
+
+Resultado esperado: HTTP 200.
+
+La respuesta debe contener diez pedidos simulados.
+
+### Prueba 7 — Generación de entregas
+
+```http
+GET /api/mocks/deliveries?qty=10
+```
+
+Resultado esperado: HTTP 200.
+
+La respuesta debe contener diez entregas simuladas.
+
+### Prueba 8 — Persistencia en MongoDB
+
+```http
+POST /api/mocks/seed?qty=3
+```
+
+Resultado esperado: HTTP 201.
+
+Se generan y almacenan tres usuarios, tres repartidores, tres productos, tres pedidos y tres entregas.
+
+**Advertencia:** esta prueba inserta registros reales en la base de datos configurada.
+
+### Prueba 9 — Falla del seed
+
+Código esperado ante una falla inesperada durante la generación o persistencia:
+
+`MOCK_SEED_FAILED`
+
+Estado HTTP esperado: 500.
+
+Esta prueba requiere simular una falla de forma controlada y verificar el resultado. No se considera validada únicamente por el éxito del seed.
 
 ---
 
-# Variables de entorno
+## 13. Configuración de entorno
 
-El proyecto incluye:
+La configuración se centraliza en:
 
-```text
-.env.example
-```
+`src/config/env.config.js`
 
-con:
+Variables utilizadas:
 
-```env
-PORT=
-MONGODB_URI=
-NODE_ENV=
-```
+- `PORT`
+- `MONGODB_URI`
+- `NODE_ENV`
 
-El archivo `.env` real no se incluye en el repositorio.
+El proyecto incluye un archivo `.env.example`.
 
-Ejemplo local:
+Ejemplo de configuración local:
 
 ```env
 PORT=8080
@@ -584,37 +801,43 @@ MONGODB_URI=mongodb://localhost:27017/shipnow
 NODE_ENV=development
 ```
 
+El archivo `.env` real no debe publicarse en el repositorio.
+
 ---
 
-# Instalación
+## 14. Instalación y ejecución
 
-Clonar el repositorio:
+### Clonar el repositorio
 
 ```bash
-git clone URL_DEL_REPOSITORIO
+git clone https://github.com/gastonjaureguib-stack/backend3.git
 ```
 
-Entrar al proyecto:
+### Entrar al proyecto
 
 ```bash
 cd backend3
 ```
 
-Instalar las dependencias:
+### Instalar dependencias
 
 ```bash
 npm install
 ```
 
-Crear `.env` tomando `.env.example` como referencia.
+### Configurar variables de entorno
 
-Iniciar el proyecto:
+Crear un archivo `.env` a partir de `.env.example` y completar los valores correspondientes.
+
+Es necesario contar con una instancia de MongoDB accesible mediante `MONGODB_URI`.
+
+### Iniciar el servidor
 
 ```bash
 npm run dev
 ```
 
-Con la configuración de ejemplo, la API estará disponible en:
+Con `PORT=8080`, la API estará disponible en:
 
 ```text
 http://localhost:8080
@@ -622,86 +845,74 @@ http://localhost:8080
 
 ---
 
-# Ejemplo de creación de producto
+## 15. Pruebas realizadas
 
-```http
-POST /api/products
-```
+Durante el desarrollo del Módulo 3 se verificaron los siguientes escenarios:
 
-```json
-{
-  "name": "Monstera Deliciosa",
-  "description": "Planta tropical de interior de hojas grandes",
-  "category": "interior",
-  "price": 850,
-  "stock": 5
-}
-```
+| Prueba | Resultado |
+|--------|-----------|
+| Cantidad negativa de mocks | Exitosa |
+| ObjectId inválido | Exitosa |
+| Producto inexistente | Exitosa |
+| Ruta inexistente | Exitosa |
+| Validación de Zod | Exitosa |
+| Generación de pedidos | Exitosa |
+| Generación de entregas | Exitosa |
+| Persistencia mediante seed | Exitosa |
+| Falla inesperada durante el seed | Pendiente |
 
-El Service determina automáticamente el estado del producto a partir del stock.
-
----
-
-# Ejemplo de creación de usuario
-
-```http
-POST /api/users
-```
-
-```json
-{
-  "firstName": "Gastón",
-  "lastName": "Jaureguiberry",
-  "email": "gaston@email.com",
-  "password": "12345678"
-}
-```
-
-El usuario se crea con rol `USER` por defecto y la contraseña se almacena mediante bcrypt.
+Las pruebas realizadas confirmaron el funcionamiento de los principales mecanismos de validación, propagación de errores y generación de datos.
 
 ---
 
-# Manejo de errores
+## 16. Estado del proyecto
 
-La aplicación utiliza un error personalizado `AppError` y un middleware global de errores.
+### Módulo 1
 
-Los Controllers derivan los errores mediante:
+- Arquitectura por capas implementada.
+- CRUD de usuarios.
+- CRUD de productos.
+- Validaciones con Zod.
+- Configuración de entorno centralizada.
+- Constantes de dominio.
+- Persistencia con MongoDB.
+- Contraseñas protegidas con bcrypt.
 
-```js
-next(error);
-```
+### Módulo 2
 
-evitando repetir la construcción de respuestas de error en cada endpoint.
+- Generación de mocks mediante Faker.
+- Usuarios y repartidores simulados.
+- Productos simulados.
+- Pedidos y entregas simulados.
+- Generación sin persistencia.
+- Seed con persistencia en MongoDB.
+- Relaciones entre entidades.
+- Corrección de disponibilidad de productos para generación de pedidos.
+
+### Módulo 3
+
+- Clase personalizada `AppError`.
+- Diccionario centralizado de errores.
+- Middleware global de errores.
+- Manejo de errores de usuarios.
+- Manejo de errores de productos.
+- Validación de cantidades de mocks.
+- Validación de ObjectIds.
+- Integración con Zod.
+- Manejo de rutas inexistentes.
+- Manejo de errores inesperados.
+- Manejo controlado de fallas del seed.
+- Respuestas HTTP uniformes.
+- Pruebas de validación y propagación de errores.
 
 ---
 
-# Estado del proyecto
+## 17. Repositorio
 
-## Módulo 1
+GitHub:
 
-- Arquitectura Controller → Service → Repository implementada.
-- CRUD de Products.
-- CRUD de Users.
-- Configuración de entorno centralizada y validada.
-- Constantes para roles y estados.
-- Validaciones mediante Zod.
-- Validación de ObjectId.
-- Manejo centralizado de errores.
-- Contraseñas procesadas con bcrypt.
-- Filtros controlados para Products.
+https://github.com/gastonjaureguib-stack/backend3
 
-## Módulo 2
+---
 
-- Mocking mediante Faker.
-- Generación de usuarios simulados.
-- Generación de repartidores simulados.
-- Generación de plantas simuladas.
-- Generación de pedidos simulados.
-- Generación de entregas simuladas.
-- Endpoints de mocks sin persistencia.
-- Seed controlado en MongoDB.
-- Relaciones entre usuarios, pedidos, productos, entregas y repartidores.
-- Roles, estados y prioridades centralizados mediante constantes.
-- Carga masiva mediante Repositories.
-- Contraseñas de usuarios mock hasheadas antes de persistirse.
-- Estados de respuesta centralizados mediante constantes.
+**Proyecto académico desarrollado para Backend III — Coderhouse.**

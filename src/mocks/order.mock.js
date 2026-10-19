@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 import { faker } from "@faker-js/faker";
 
@@ -6,11 +7,15 @@ import {
   ORDER_PRIORITY,
 } from "../constants/index.js";
 
+import AppError from "../utils/AppError.js";
+
+// =========================================
+// GENERAR UN PEDIDO
+// =========================================
+
 export const generateMockOrder = (users = [], products = []) => {
   if (users.length === 0 || products.length === 0) {
-    throw new Error(
-      "Se necesitan usuarios y productos para generar pedidos simulados."
-    );
+    throw new AppError("MOCK_DATA_REQUIRED");
   }
 
   const user = faker.helpers.arrayElement(users);
@@ -20,9 +25,7 @@ export const generateMockOrder = (users = [], products = []) => {
   );
 
   if (availableProducts.length === 0) {
-    throw new Error(
-      "Se necesita al menos un producto con stock para generar pedidos."
-    );
+    throw new AppError("MOCK_PRODUCT_OUT_OF_STOCK");
   }
 
   const product = faker.helpers.arrayElement(availableProducts);
@@ -50,6 +53,10 @@ export const generateMockOrder = (users = [], products = []) => {
   };
 };
 
+// =========================================
+// GENERAR VARIOS PEDIDOS
+// =========================================
+
 export const generateMockOrders = (
   quantity = 10,
   users = [],
@@ -59,6 +66,10 @@ export const generateMockOrders = (
     generateMockOrder(users, products)
   );
 };
+
+// =========================================
+// GENERAR PEDIDOS SIN PERSISTENCIA
+// =========================================
 
 export const generateStandaloneMockOrders = (
   quantity = 10,

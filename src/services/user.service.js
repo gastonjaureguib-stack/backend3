@@ -1,3 +1,4 @@
+
 import bcrypt from "bcrypt";
 
 import userRepository from "../repositories/user.repository.js";
@@ -12,20 +13,25 @@ class UserService {
     const user = await userRepository.getById(id);
 
     if (!user) {
-      throw new AppError("Usuario no encontrado", 404);
+      throw new AppError("USER_NOT_FOUND");
     }
 
     return user;
   }
 
   async createUser(userData) {
-    const existingUser = await userRepository.getByEmail(userData.email);
+    const existingUser = await userRepository.getByEmail(
+      userData.email
+    );
 
     if (existingUser) {
-      throw new AppError("Ya existe un usuario con ese email", 409);
+      throw new AppError("EMAIL_ALREADY_EXISTS");
     }
 
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    const hashedPassword = await bcrypt.hash(
+      userData.password,
+      10
+    );
 
     const data = {
       ...userData,
@@ -49,24 +55,28 @@ class UserService {
     const existingUser = await userRepository.getById(id);
 
     if (!existingUser) {
-      throw new AppError("Usuario no encontrado", 404);
+      throw new AppError("USER_NOT_FOUND");
     }
 
     const data = { ...userData };
 
     if (data.email) {
-      const userWithSameEmail = await userRepository.getByEmail(data.email);
+      const userWithSameEmail =
+        await userRepository.getByEmail(data.email);
 
       if (
         userWithSameEmail &&
         userWithSameEmail._id.toString() !== id
       ) {
-        throw new AppError("Ya existe un usuario con ese email", 409);
+        throw new AppError("EMAIL_ALREADY_EXISTS");
       }
     }
 
     if (data.password) {
-      data.password = await bcrypt.hash(data.password, 10);
+      data.password = await bcrypt.hash(
+        data.password,
+        10
+      );
     }
 
     return userRepository.update(id, data);
@@ -76,7 +86,7 @@ class UserService {
     const user = await userRepository.getById(id);
 
     if (!user) {
-      throw new AppError("Usuario no encontrado", 404);
+      throw new AppError("USER_NOT_FOUND");
     }
 
     return userRepository.delete(id);

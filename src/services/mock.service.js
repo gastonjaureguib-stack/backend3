@@ -1,3 +1,4 @@
+
 import bcrypt from "bcrypt";
 
 import {
@@ -22,15 +23,40 @@ import productRepository from "../repositories/product.repository.js";
 import orderRepository from "../repositories/order.repository.js";
 import deliveryRepository from "../repositories/delivery.repository.js";
 
+import AppError from "../utils/AppError.js";
+
+// =========================================
+// VALIDAR CANTIDAD DE MOCKS
+// =========================================
+
 const parseQuantity = (quantity, defaultValue = 10) => {
+  if (quantity === undefined) {
+    return defaultValue;
+  }
+
+  if (
+    typeof quantity === "boolean" ||
+    quantity === null ||
+    (typeof quantity === "string" && quantity.trim() === "")
+  ) {
+    throw new AppError("INVALID_MOCK_QUANTITY");
+  }
+
   const parsedQuantity = Number(quantity);
 
-  if (!Number.isInteger(parsedQuantity) || parsedQuantity <= 0) {
-    return defaultValue;
+  if (
+    !Number.isSafeInteger(parsedQuantity) ||
+    parsedQuantity <= 0
+  ) {
+    throw new AppError("INVALID_MOCK_QUANTITY");
   }
 
   return parsedQuantity;
 };
+
+// =========================================
+// HASHEAR CONTRASEÑAS
+// =========================================
 
 const hashPasswords = async (users) => {
   return Promise.all(
@@ -41,11 +67,19 @@ const hashPasswords = async (users) => {
   );
 };
 
+// =========================================
+// MOCKS DE USUARIOS
+// =========================================
+
 export const getMockUsers = (quantity) => {
   const qty = parseQuantity(quantity);
 
   return generateMockUsers(qty);
 };
+
+// =========================================
+// MOCKS DE REPARTIDORES
+// =========================================
 
 export const getMockDrivers = (quantity) => {
   const qty = parseQuantity(quantity);
@@ -53,11 +87,19 @@ export const getMockDrivers = (quantity) => {
   return generateMockDrivers(qty);
 };
 
+// =========================================
+// MOCKS DE PRODUCTOS
+// =========================================
+
 export const getMockProducts = (quantity) => {
   const qty = parseQuantity(quantity);
 
   return generateMockProducts(qty);
 };
+
+// =========================================
+// MOCKS DE PEDIDOS
+// =========================================
 
 export const getMockOrders = (quantity) => {
   const qty = parseQuantity(quantity);
@@ -71,6 +113,10 @@ export const getMockOrders = (quantity) => {
     products
   );
 };
+
+// =========================================
+// MOCKS DE ENTREGAS
+// =========================================
 
 export const getMockDeliveries = (quantity) => {
   const qty = parseQuantity(quantity);
@@ -93,60 +139,82 @@ export const getMockDeliveries = (quantity) => {
   );
 };
 
+// =========================================
+// GUARDAR MOCKS EN MONGODB
+// =========================================
+
 export const seedMockData = async (quantity) => {
+  // Validamos antes de comenzar cualquier operación.
   const qty = parseQuantity(quantity);
 
-  // 1. Generamos clientes y repartidores
-  const mockUsers = generateMockUsers(qty);
-  const mockDrivers = generateMockDrivers(qty);
+  try {
+    // 1. Generamos clientes y repartidores.
+    const mockUsers = generateMockUsers(qty);
+    const mockDrivers = generateMockDrivers(qty);
 
-  // 2. Hasheamos sus contraseñas
-  const usersWithHashedPasswords = await hashPasswords(mockUsers);
-  const driversWithHashedPasswords = await hashPasswords(mockDrivers);
+    // 2. Hasheamos sus contraseñas.
+    const usersWithHashedPasswords =
+      await hashPasswords(mockUsers);
 
-  // 3. Guardamos usuarios y repartidores
-  const createdUsers = await userRepository.createMany(
-    usersWithHashedPasswords
-  );
+    const driversWithHashedPasswords =
+      await hashPasswords(mockDrivers);
 
-  const createdDrivers = await userRepository.createMany(
-    driversWithHashedPasswords
-  );
+    // 3. Guardamos usuarios y repartidores.
+    const createdUsers = await userRepository.createMany(
+      usersWithHashedPasswords
+    );
 
-  // 4. Generamos y guardamos plantas
-  const mockProducts = generateMockProducts(qty);
+    const createdDrivers = await userRepository.createMany(
+      driversWithHashedPasswords
+    );
 
-  const createdProducts = await productRepository.createMany(
-    mockProducts
-  );
+    // 4. Generamos y guardamos plantas.
+    const mockProducts = generateMockProducts(qty);
 
-  // 5. Generamos y guardamos pedidos
-  const mockOrders = generateMockOrders(
-    qty,
-    createdUsers,
-    createdProducts
-  );
+    const createdProducts = await productRepository.createMany(
+      mockProducts
+    );
 
-  const createdOrders = await orderRepository.createMany(
-    mockOrders
-  );
+    // 5. Generamos y guardamos pedidos.
+    const mockOrders = generateMockOrders(
+      qty,
+      createdUsers,
+      createdProducts
+    );
 
-  // 6. Generamos y guardamos entregas
-  const mockDeliveries = generateMockDeliveries(
-    qty,
-    createdOrders,
-    createdDrivers
-  );
+    const createdOrders = await orderRepository.createMany(
+      mockOrders
+    );
 
-  const createdDeliveries = await deliveryRepository.createMany(
-    mockDeliveries
-  );
+    // 6. Generamos y guardamos entregas.
+    const mockDeliveries = generateMockDeliveries(
+      qty,
+      createdOrders,
+      createdDrivers
+    );
 
-  return {
-    users: createdUsers.length,
-    drivers: createdDrivers.length,
-    products: createdProducts.length,
-    orders: createdOrders.length,
-    deliveries: createdDeliveries.length,
-  };
+    const createdDeliveries =
+      await deliveryRepository.createMany(
+        mockDeliveries
+      );
+
+    return {
+      users: createdUsers.length,
+      drivers: createdDrivers.length,
+      products: createdProducts.length,
+      orders: createdOrders.length,
+      deliveries: createdDeliveries.length,
+    };
+  } catch (error) {
+    // Conservamos los errores de dominio.
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    // Registramos el error técnico para depuración.
+    console.error("Error al generar y guardar mocks:", error);
+
+    // Enviamos un error controlado al middleware global.
+    throw new AppError("MOCK_SEED_FAILED");
+  }
 };

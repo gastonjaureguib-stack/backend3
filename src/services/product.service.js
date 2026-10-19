@@ -1,3 +1,4 @@
+
 import productRepository from "../repositories/product.repository.js";
 import { PRODUCT_STATUS } from "../constants/index.js";
 import AppError from "../utils/AppError.js";
@@ -14,7 +15,7 @@ class ProductService {
       const validStatuses = Object.values(PRODUCT_STATUS);
 
       if (!validStatuses.includes(query.status)) {
-        throw new AppError("Estado de producto inválido", 400);
+        throw new AppError("INVALID_PRODUCT_STATUS");
       }
 
       filters.status = query.status;
@@ -27,7 +28,7 @@ class ProductService {
     const product = await productRepository.getById(id);
 
     if (!product) {
-      throw new AppError("Producto no encontrado", 404);
+      throw new AppError("PRODUCT_NOT_FOUND");
     }
 
     return product;
@@ -48,7 +49,7 @@ class ProductService {
     const existingProduct = await productRepository.getById(id);
 
     if (!existingProduct) {
-      throw new AppError("Producto no encontrado", 404);
+      throw new AppError("PRODUCT_NOT_FOUND");
     }
 
     const data = { ...productData };
@@ -67,7 +68,7 @@ class ProductService {
     const product = await productRepository.getById(id);
 
     if (!product) {
-      throw new AppError("Producto no encontrado", 404);
+      throw new AppError("PRODUCT_NOT_FOUND");
     }
 
     return productRepository.delete(id);

@@ -1,3 +1,4 @@
+
 import { faker } from "@faker-js/faker";
 import { PRODUCT_STATUS } from "../constants/index.js";
 
@@ -44,6 +45,10 @@ const PLANTS = [
   },
 ];
 
+// =========================================
+// GENERAR UN PRODUCTO
+// =========================================
+
 export const generateMockProduct = () => {
   const plant = faker.helpers.arrayElement(PLANTS);
   const stock = faker.number.int({ min: 0, max: 50 });
@@ -61,6 +66,28 @@ export const generateMockProduct = () => {
   };
 };
 
+// =========================================
+// GENERAR PRODUCTOS
+// =========================================
+
 export const generateMockProducts = (quantity = 10) => {
-  return Array.from({ length: quantity }, () => generateMockProduct());
+  const products = Array.from(
+    { length: quantity },
+    () => generateMockProduct()
+  );
+
+  // Garantizamos al menos un producto disponible.
+  if (
+    products.length > 0 &&
+    !products.some((product) => product.stock > 0)
+  ) {
+    products[0].stock = faker.number.int({
+      min: 1,
+      max: 50,
+    });
+
+    products[0].status = PRODUCT_STATUS.AVAILABLE;
+  }
+
+  return products;
 };

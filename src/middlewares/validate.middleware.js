@@ -1,4 +1,9 @@
+
 import AppError from "../utils/AppError.js";
+
+// =========================================
+// MIDDLEWARE DE VALIDACIÓN CON ZOD
+// =========================================
 
 const validate = (schema) => {
   return (req, res, next) => {
@@ -9,7 +14,9 @@ const validate = (schema) => {
         .map((issue) => issue.message)
         .join(", ");
 
-      return next(new AppError(message, 400));
+      return next(
+        new AppError("VALIDATION_ERROR", message)
+      );
     }
 
     req.body = result.data;
