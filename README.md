@@ -1,17 +1,16 @@
-
 # 🌱 ShipNow — Backend III
 
 API REST desarrollada como parte del curso **Backend III de Coderhouse**.
 
 ShipNow simula el backend de una tienda online de plantas y productos de jardinería.
 
-El proyecto utiliza una arquitectura por capas, persistencia en MongoDB, generación de datos simulados y un sistema centralizado de manejo de errores.
+El proyecto utiliza una arquitectura por capas, persistencia en MongoDB, generación de datos simulados, manejo centralizado de errores y un sistema profesional de logging mediante Winston.
 
 ---
 
 ## 1. Objetivos del proyecto
 
-El proyecto se desarrolla progresivamente mediante tres módulos.
+El proyecto se desarrolla progresivamente mediante cuatro módulos.
 
 ### Módulo 1 — Arquitectura por capas
 
@@ -56,19 +55,38 @@ Implementación de un sistema centralizado de errores mediante:
 - Manejo de fallas durante el seed.
 - Respuestas HTTP uniformes.
 
+### Módulo 4 — Logging y monitoreo básico
+
+Implementación de un sistema de logging mediante Winston y Winston Daily Rotate File.
+
+Incluye:
+
+- Logger centralizado.
+- Seis niveles personalizados de severidad.
+- Configuración diferenciada para desarrollo y producción.
+- Registro de eventos del servidor y MongoDB.
+- Registro de errores HTTP.
+- Logging de operaciones de mocking y seed.
+- Archivos rotativos para errores.
+- Exclusión de logs del repositorio.
+- Endpoint de diagnóstico exclusivo de desarrollo.
+- Pruebas de funcionamiento del logger y rotación por tamaño.
+
 ---
 
 ## 2. Tecnologías utilizadas
 
-- Node.js
-- Express
-- MongoDB
-- Mongoose
-- JavaScript ES Modules
-- Zod
-- bcrypt
-- Faker (`@faker-js/faker`)
-- dotenv
+- Node.js.
+- Express.
+- MongoDB.
+- Mongoose.
+- JavaScript ES Modules.
+- Zod.
+- bcrypt.
+- Faker (`@faker-js/faker`).
+- dotenv.
+- Winston.
+- Winston Daily Rotate File.
 
 ---
 
@@ -135,6 +153,13 @@ Se encargan de tareas transversales como:
 - Validar datos con Zod.
 - Validar identificadores de MongoDB.
 - Procesar errores de manera centralizada.
+- Registrar errores mediante Winston.
+
+### Logging
+
+El sistema de logging funciona como una herramienta transversal a la aplicación.
+
+Su configuración se centraliza en `src/config/logger.config.js`, permitiendo reutilizar una misma instancia del logger desde distintos módulos.
 
 ---
 
@@ -143,7 +168,8 @@ Se encargan de tareas transversales como:
 ```text
 src/
 ├── config/
-│   └── env.config.js
+│   ├── env.config.js
+│   └── logger.config.js
 ├── constants/
 │   └── index.js
 ├── controllers/
@@ -187,6 +213,8 @@ src/
 └── server.js
 ```
 
+El directorio `logs/` se utiliza para almacenar los archivos generados por Winston y está excluido de Git.
+
 ---
 
 ## 5. Entidades
@@ -215,7 +243,7 @@ Los endpoints normales de consulta no devuelven la contraseña.
 
 ### Products
 
-Representan plantas disponibles en ShipNow.
+Representan plantas y productos disponibles en ShipNow.
 
 Campos principales:
 
@@ -234,8 +262,8 @@ Estados:
 El estado se determina según el stock:
 
 ```text
-stock > 0 → available
-stock = 0 → out_of_stock
+stock > 0 → AVAILABLE
+stock = 0 → OUT_OF_STOCK
 ```
 
 ### Orders
@@ -311,7 +339,7 @@ Esto evita repetir valores literales y mantiene consistencia entre modelos, serv
 ## 7. Endpoints de usuarios
 
 | Método | Endpoint | Descripción |
-|--------|----------|-------------|
+|---|---|---|
 | GET | `/api/users` | Obtener usuarios |
 | GET | `/api/users/:id` | Obtener usuario por ID |
 | POST | `/api/users` | Crear usuario |
@@ -340,7 +368,7 @@ La contraseña se procesa con bcrypt antes de almacenarse.
 ## 8. Endpoints de productos
 
 | Método | Endpoint | Descripción |
-|--------|----------|-------------|
+|---|---|---|
 | GET | `/api/products` | Obtener productos |
 | GET | `/api/products/:id` | Obtener producto por ID |
 | POST | `/api/products` | Crear producto |
@@ -388,7 +416,7 @@ Los endpoints GET generan información en memoria y no realizan inserciones en M
 ### Endpoints
 
 | Método | Endpoint | Descripción |
-|--------|----------|-------------|
+|---|---|---|
 | GET | `/api/mocks/users` | Generar usuarios |
 | GET | `/api/mocks/drivers` | Generar repartidores |
 | GET | `/api/mocks/products` | Generar productos |
@@ -489,7 +517,7 @@ La función `seedMockData()` utiliza `try/catch` para controlar errores durante 
 
 Los errores de dominio identificados se conservan.
 
-Los errores inesperados se registran en la consola del servidor y se convierten en `MOCK_SEED_FAILED`.
+Los errores inesperados se registran mediante Winston y se convierten en `MOCK_SEED_FAILED`.
 
 **Limitación:** el seed no utiliza transacciones de MongoDB. Si una operación falla después de que otras se completaron, pueden permanecer registros parcialmente insertados.
 
@@ -536,12 +564,10 @@ Centraliza:
 - Estado HTTP.
 - Mensaje descriptivo.
 
-Esto permite mantener consistencia entre los distintos módulos.
-
 ### Errores definidos
 
 | Código | HTTP | Descripción |
-|--------|------|-------------|
+|---|---|---|
 | `INTERNAL_SERVER_ERROR` | 500 | Error interno inesperado |
 | `ROUTE_NOT_FOUND` | 404 | Ruta inexistente |
 | `VALIDATION_ERROR` | 400 | Datos inválidos |
@@ -572,9 +598,16 @@ Los errores personalizados utilizan el estado HTTP, código y mensaje definidos.
 
 Los errores inesperados devuelven HTTP 500 y no exponen información técnica sensible al cliente.
 
-### Formato uniforme de respuesta
+### Integración con Winston
 
-Las respuestas de error utilizan esta estructura:
+El middleware global registra:
+
+- Errores controlados con estado HTTP inferior a 500 mediante `warning`.
+- Errores internos o inesperados mediante `error`.
+
+El registro de errores no modifica el formato de las respuestas HTTP.
+
+### Formato uniforme de respuesta
 
 ```json
 {
@@ -591,8 +624,6 @@ Los services detectan las situaciones inválidas y lanzan errores.
 Los controllers utilizan `next(error)` para propagarlos.
 
 El middleware global construye la respuesta HTTP.
-
-Flujo:
 
 ```text
 Request
@@ -611,6 +642,8 @@ next(error)
    |
    v
 Global Error Middleware
+   |
+   +----> Winston Logger
    |
    v
 HTTP Response
@@ -769,7 +802,408 @@ Se generan y almacenan tres usuarios, tres repartidores, tres productos, tres pe
 
 ---
 
-## 13. Configuración de entorno
+## 13. Módulo 4 — Logging y monitoreo básico
+
+ShipNow incorpora un sistema centralizado de logging mediante Winston.
+
+El objetivo es registrar eventos relevantes del funcionamiento de la API, facilitar el diagnóstico de errores y mantener información útil para el seguimiento de la aplicación.
+
+### Dependencias
+
+Se incorporaron las siguientes dependencias:
+
+- `winston`
+- `winston-daily-rotate-file`
+
+Winston administra los niveles, formatos y transportes de logging.
+
+Winston Daily Rotate File permite almacenar registros en archivos rotativos.
+
+### Configuración centralizada
+
+Ubicación:
+
+`src/config/logger.config.js`
+
+Este archivo define:
+
+- Niveles personalizados.
+- Colores de consola.
+- Formato de mensajes.
+- Fecha y hora de cada registro.
+- Configuración diferenciada por entorno.
+- Transporte de consola.
+- Transporte de archivos rotativos.
+
+Los distintos módulos importan la misma instancia del logger.
+
+### Niveles personalizados
+
+Se definieron seis niveles de severidad.
+
+| Nivel | Prioridad | Uso |
+|---|---:|---|
+| `fatal` | 0 | Fallas críticas del sistema |
+| `error` | 1 | Errores de ejecución |
+| `warning` | 2 | Situaciones anómalas o errores controlados |
+| `info` | 3 | Eventos relevantes de funcionamiento |
+| `http` | 4 | Mensajes de diagnóstico HTTP |
+| `debug` | 5 | Información detallada para desarrollo |
+
+Los valores numéricos representan la prioridad interna de Winston.
+
+Cuanto menor es el número, mayor es la severidad.
+
+### Formato de los registros
+
+Los mensajes incluyen:
+
+- Fecha.
+- Hora.
+- Nivel de severidad.
+- Mensaje descriptivo.
+
+Ejemplo:
+
+```text
+2026-10-22 19:10:01 [info] Conexión a MongoDB establecida correctamente
+2026-10-22 19:10:01 [info] Servidor ShipNow escuchando en el puerto 8080
+```
+
+La consola utiliza colores diferenciados según el nivel.
+
+Los archivos utilizan un formato de texto sin códigos de color.
+
+### Configuración de desarrollo
+
+Cuando `NODE_ENV=development`, la consola utiliza el nivel `debug`.
+
+Esto permite mostrar todos los niveles configurados:
+
+```text
+debug
+http
+info
+warning
+error
+fatal
+```
+
+### Configuración de producción
+
+Cuando `NODE_ENV=production`, la consola utiliza el nivel `info`.
+
+Se muestran los niveles:
+
+```text
+info
+warning
+error
+fatal
+```
+
+Los mensajes `debug` y `http` no aparecen en esta configuración.
+
+Esto permite reducir la información de diagnóstico en producción.
+
+### Registro del servidor
+
+Ubicación:
+
+`src/server.js`
+
+El logger registra:
+
+- Conexión exitosa a MongoDB.
+- Inicio correcto del servidor HTTP.
+- Entorno de ejecución durante desarrollo.
+- Fallas críticas al conectar con MongoDB.
+- Errores críticos al iniciar el servidor HTTP.
+
+Ejemplo de inicio exitoso:
+
+```text
+[info] Conexión a MongoDB establecida correctamente
+[info] Servidor ShipNow escuchando en el puerto 8080
+```
+
+Ejemplo de error crítico:
+
+```text
+[fatal] Error crítico al iniciar el servidor HTTP: listen EADDRINUSE: address already in use :::8080
+```
+
+### Registro de errores HTTP
+
+Ubicación:
+
+`src/middlewares/error.middleware.js`
+
+El middleware global registra errores mediante Winston.
+
+Los errores controlados con estados HTTP inferiores a 500 se registran como `warning`.
+
+Los errores internos o inesperados se registran como `error`.
+
+Las respuestas HTTP mantienen el formato uniforme definido en el módulo 3.
+
+### Registro de mocks
+
+Ubicación:
+
+`src/services/mock.service.js`
+
+Se incorporaron registros para las operaciones de generación de:
+
+- Usuarios.
+- Repartidores.
+- Productos.
+- Pedidos.
+- Entregas.
+
+También se registran eventos relacionados con la carga de datos mediante seed.
+
+Los mensajes permiten observar operaciones exitosas, información de diagnóstico y situaciones de error.
+
+### Archivos rotativos de errores
+
+El logger utiliza `winston-daily-rotate-file` para almacenar registros de errores.
+
+Configuración:
+
+| Propiedad | Valor |
+|---|---|
+| Directorio | `logs/` |
+| Nombre | `error-%DATE%.log` |
+| Patrón de fecha | `YYYY-MM-DD` |
+| Nivel | `error` |
+| Tamaño máximo | `10m` |
+| Conservación | `14d` |
+| Compresión | Activada |
+
+El transporte de archivos registra los niveles `error` y `fatal`.
+
+Los mensajes `info`, `http`, `debug` y `warning` no se guardan en ese transporte.
+
+Ejemplo de archivo:
+
+```text
+logs/error-2026-10-22.log
+```
+
+Contenido de ejemplo:
+
+```text
+2026-10-22 19:08:24 [error] Prueba del nivel ERROR
+2026-10-22 19:08:24 [fatal] Prueba del nivel FATAL
+```
+
+La configuración permite rotar los archivos por fecha y tamaño, limitar su conservación y comprimir archivos rotados.
+
+### Verificación de rotación por tamaño
+
+Se realizó una prueba funcional independiente utilizando Winston Daily Rotate File con un tamaño máximo reducido de `1k`.
+
+Esta prueba permitió forzar la generación de registros y comprobar el mecanismo de rotación por tamaño sin alterar la configuración principal de ShipNow.
+
+La configuración utilizada por la aplicación conserva su límite de `10m`.
+
+### Exclusión de archivos de Git
+
+El archivo `.gitignore` incluye:
+
+```gitignore
+logs/
+*.log
+```
+
+Esto evita incorporar los archivos de ejecución al repositorio.
+
+### Endpoint de prueba del logger
+
+Se incorporó el siguiente endpoint:
+
+```http
+GET /api/logger/test
+```
+
+Está disponible únicamente cuando:
+
+```env
+NODE_ENV=development
+```
+
+El endpoint ejecuta un mensaje por cada nivel:
+
+```javascript
+logger.debug("Prueba del nivel DEBUG");
+logger.http("Prueba del nivel HTTP");
+logger.info("Prueba del nivel INFO");
+logger.warning("Prueba del nivel WARNING");
+logger.error("Prueba del nivel ERROR");
+logger.fatal("Prueba del nivel FATAL");
+```
+
+Respuesta:
+
+```json
+{
+  "status": "success",
+  "message": "Prueba del logger ejecutada correctamente",
+  "levels": [
+    "debug",
+    "http",
+    "info",
+    "warning",
+    "error",
+    "fatal"
+  ]
+}
+```
+
+Los mensajes `error` y `fatal` también se escriben en el archivo rotativo.
+
+### Protección del endpoint en producción
+
+Cuando `NODE_ENV=production`, la ruta de diagnóstico no se registra.
+
+Una solicitud a:
+
+```http
+GET /api/logger/test
+```
+
+devuelve HTTP 404:
+
+```json
+{
+  "status": "error",
+  "code": "ROUTE_NOT_FOUND",
+  "message": "Ruta no encontrada"
+}
+```
+
+Esto evita exponer el endpoint de pruebas en producción.
+
+### Alcance del monitoreo
+
+El módulo proporciona logging por niveles y persistencia de errores.
+
+El nivel `http` está disponible para futuras integraciones de registro automático de solicitudes.
+
+El sistema no incorpora paneles de métricas, alertas automáticas ni seguimiento distribuido de solicitudes.
+
+---
+
+## 14. Pruebas del módulo 4
+
+### Prueba 1 — Inicio en desarrollo
+
+Comando:
+
+```bash
+npm run dev
+```
+
+Resultado verificado:
+
+```text
+[info] Conexión a MongoDB establecida correctamente
+[info] Servidor ShipNow escuchando en el puerto 8080
+[debug] Entorno de ejecución: development
+```
+
+### Prueba 2 — Ejecución de todos los niveles
+
+Endpoint:
+
+```http
+GET /api/logger/test
+```
+
+Se verificó la emisión de los seis niveles:
+
+```text
+[debug] Prueba del nivel DEBUG
+[http] Prueba del nivel HTTP
+[info] Prueba del nivel INFO
+[warning] Prueba del nivel WARNING
+[error] Prueba del nivel ERROR
+[fatal] Prueba del nivel FATAL
+```
+
+### Prueba 3 — Persistencia de errores
+
+Se comprobó la creación de:
+
+```text
+logs/error-2026-10-22.log
+```
+
+El archivo contenía los registros `error` y `fatal` generados durante la prueba.
+
+### Prueba 4 — Exclusión de Git
+
+Se utilizó:
+
+```bash
+git check-ignore logs/error-*.log
+```
+
+El resultado confirmó que los archivos de logs están ignorados por Git.
+
+### Prueba 5 — Inicio en producción
+
+Comando utilizado desde Git Bash:
+
+```bash
+NODE_ENV=production npm start
+```
+
+Resultado verificado:
+
+```text
+2026-10-22 19:10:01 [info] Conexión a MongoDB establecida correctamente
+2026-10-22 19:10:01 [info] Servidor ShipNow escuchando en el puerto 8080
+```
+
+El mensaje `debug` no apareció.
+
+### Prueba 6 — Error crítico del servidor
+
+Durante una prueba se intentó iniciar el servidor mientras el puerto 8080 estaba ocupado.
+
+Winston registró:
+
+```text
+[fatal] Error crítico al iniciar el servidor HTTP: listen EADDRINUSE: address already in use :::8080
+```
+
+Esto permitió verificar el registro de una falla crítica real.
+
+### Prueba 7 — Endpoint deshabilitado en producción
+
+Se comprobó que:
+
+```http
+GET /api/logger/test
+```
+
+devuelve HTTP 404 en producción.
+
+### Prueba 8 — Transporte rotativo
+
+Se verificó que el transporte configurado corresponde a `DailyRotateFile`, utiliza el nivel `error` y tiene como nombre de archivo `error-%DATE%.log`.
+
+### Prueba 9 — Rotación por tamaño
+
+Se realizó una prueba aislada con un tamaño máximo de `1k` para forzar la rotación mediante la escritura de múltiples registros.
+
+La prueba utiliza la misma librería de rotación integrada en ShipNow, manteniendo intacta la configuración principal de la aplicación.
+
+---
+
+## 15. Configuración de entorno
 
 La configuración se centraliza en:
 
@@ -793,9 +1227,25 @@ NODE_ENV=development
 
 El archivo `.env` real no debe publicarse en el repositorio.
 
+### Entornos
+
+Para desarrollo:
+
+```env
+NODE_ENV=development
+```
+
+Para producción:
+
+```env
+NODE_ENV=production
+```
+
+El valor de `NODE_ENV` determina el nivel de logging de consola y la disponibilidad del endpoint de diagnóstico.
+
 ---
 
-## 14. Instalación y ejecución
+## 16. Instalación y ejecución
 
 ### Clonar el repositorio
 
@@ -821,10 +1271,20 @@ Crear un archivo `.env` a partir de `.env.example` y completar los valores corre
 
 Es necesario contar con una instancia de MongoDB accesible mediante `MONGODB_URI`.
 
-### Iniciar el servidor
+### Iniciar en desarrollo
 
 ```bash
 npm run dev
+```
+
+### Iniciar en producción
+
+Configurar `NODE_ENV=production` en el entorno de ejecución.
+
+Desde Git Bash:
+
+```bash
+NODE_ENV=production npm start
 ```
 
 Con `PORT=8080`, la API estará disponible en:
@@ -833,14 +1293,29 @@ Con `PORT=8080`, la API estará disponible en:
 http://localhost:8080
 ```
 
+### Probar el logger
+
+Con el servidor iniciado en desarrollo:
+
+```http
+GET http://localhost:8080/api/logger/test
+```
+
+Para inspeccionar los archivos generados desde Git Bash:
+
+```bash
+ls -lah logs/
+cat logs/error-*.log
+```
+
 ---
 
-## 15. Pruebas realizadas
+## 17. Pruebas realizadas
 
-Durante el desarrollo del Módulo 3 se verificaron los siguientes escenarios:
+### Módulo 3
 
 | Prueba | Resultado |
-|--------|-----------|
+|---|---|
 | Cantidad negativa de mocks | Exitosa |
 | ObjectId inválido | Exitosa |
 | Producto inexistente | Exitosa |
@@ -850,11 +1325,23 @@ Durante el desarrollo del Módulo 3 se verificaron los siguientes escenarios:
 | Generación de entregas | Exitosa |
 | Persistencia mediante seed | Exitosa |
 
-Las pruebas realizadas confirmaron el funcionamiento de los principales mecanismos de validación, propagación de errores y generación de datos.
+### Módulo 4
+
+| Prueba | Resultado |
+|---|---|
+| Inicio del servidor en desarrollo | Exitosa |
+| Emisión de los seis niveles | Exitosa |
+| Escritura de errores en archivo | Exitosa |
+| Exclusión de logs mediante `.gitignore` | Exitosa |
+| Inicio del servidor en producción | Exitosa |
+| Registro de error crítico del servidor | Exitosa |
+| Endpoint de diagnóstico deshabilitado en producción | Exitosa |
+| Identificación del transporte `DailyRotateFile` | Exitosa |
+| Rotación por tamaño mediante prueba aislada | Exitosa |
 
 ---
 
-## 16. Estado del proyecto
+## 18. Estado del proyecto
 
 ### Módulo 1
 
@@ -894,9 +1381,26 @@ Las pruebas realizadas confirmaron el funcionamiento de los principales mecanism
 - Respuestas HTTP uniformes.
 - Pruebas de validación y propagación de errores.
 
+### Módulo 4
+
+- Winston integrado.
+- Niveles personalizados de logging.
+- Configuración diferenciada para desarrollo y producción.
+- Transporte de consola con colores.
+- Registros con fecha y hora.
+- Logging de conexión a MongoDB.
+- Logging de inicio y errores críticos del servidor.
+- Logging del middleware global de errores.
+- Logging de mocks y seed.
+- Transporte rotativo para archivos de errores.
+- Rotación por tamaño verificada mediante prueba aislada.
+- Exclusión de logs mediante `.gitignore`.
+- Endpoint de diagnóstico exclusivo de desarrollo.
+- Pruebas de logging y comportamiento en producción.
+
 ---
 
-## 17. Repositorio
+## 19. Repositorio
 
 GitHub:
 

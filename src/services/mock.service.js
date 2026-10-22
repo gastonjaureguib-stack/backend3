@@ -24,6 +24,7 @@ import orderRepository from "../repositories/order.repository.js";
 import deliveryRepository from "../repositories/delivery.repository.js";
 
 import AppError from "../utils/AppError.js";
+import logger from "../config/logger.config.js";
 
 // =========================================
 // VALIDAR CANTIDAD DE MOCKS
@@ -39,6 +40,8 @@ const parseQuantity = (quantity, defaultValue = 10) => {
     quantity === null ||
     (typeof quantity === "string" && quantity.trim() === "")
   ) {
+    logger.warning("Cantidad inválida solicitada para mocks");
+
     throw new AppError("INVALID_MOCK_QUANTITY");
   }
 
@@ -48,6 +51,8 @@ const parseQuantity = (quantity, defaultValue = 10) => {
     !Number.isSafeInteger(parsedQuantity) ||
     parsedQuantity <= 0
   ) {
+    logger.warning("Cantidad inválida solicitada para mocks");
+
     throw new AppError("INVALID_MOCK_QUANTITY");
   }
 
@@ -74,7 +79,13 @@ const hashPasswords = async (users) => {
 export const getMockUsers = (quantity) => {
   const qty = parseQuantity(quantity);
 
-  return generateMockUsers(qty);
+  logger.debug(`Generando ${qty} usuarios simulados`);
+
+  const users = generateMockUsers(qty);
+
+  logger.info(`${users.length} usuarios simulados generados`);
+
+  return users;
 };
 
 // =========================================
@@ -84,7 +95,13 @@ export const getMockUsers = (quantity) => {
 export const getMockDrivers = (quantity) => {
   const qty = parseQuantity(quantity);
 
-  return generateMockDrivers(qty);
+  logger.debug(`Generando ${qty} repartidores simulados`);
+
+  const drivers = generateMockDrivers(qty);
+
+  logger.info(`${drivers.length} repartidores simulados generados`);
+
+  return drivers;
 };
 
 // =========================================
@@ -94,7 +111,13 @@ export const getMockDrivers = (quantity) => {
 export const getMockProducts = (quantity) => {
   const qty = parseQuantity(quantity);
 
-  return generateMockProducts(qty);
+  logger.debug(`Generando ${qty} productos simulados`);
+
+  const products = generateMockProducts(qty);
+
+  logger.info(`${products.length} productos simulados generados`);
+
+  return products;
 };
 
 // =========================================
@@ -104,14 +127,20 @@ export const getMockProducts = (quantity) => {
 export const getMockOrders = (quantity) => {
   const qty = parseQuantity(quantity);
 
+  logger.debug(`Iniciando generación de ${qty} pedidos simulados`);
+
   const users = generateMockUsers(qty);
   const products = generateMockProducts(qty);
 
-  return generateStandaloneMockOrders(
+  const orders = generateStandaloneMockOrders(
     qty,
     users,
     products
   );
+
+  logger.info(`${orders.length} pedidos simulados generados`);
+
+  return orders;
 };
 
 // =========================================
@@ -120,6 +149,8 @@ export const getMockOrders = (quantity) => {
 
 export const getMockDeliveries = (quantity) => {
   const qty = parseQuantity(quantity);
+
+  logger.debug(`Iniciando generación de ${qty} entregas simuladas`);
 
   const users = generateMockUsers(qty);
   const products = generateMockProducts(qty);
@@ -132,11 +163,15 @@ export const getMockDeliveries = (quantity) => {
 
   const drivers = generateMockDrivers(qty);
 
-  return generateStandaloneMockDeliveries(
+  const deliveries = generateStandaloneMockDeliveries(
     qty,
     orders,
     drivers
   );
+
+  logger.info(`${deliveries.length} entregas simuladas generadas`);
+
+  return deliveries;
 };
 
 // =========================================
@@ -147,8 +182,12 @@ export const seedMockData = async (quantity) => {
   // Validamos antes de comenzar cualquier operación.
   const qty = parseQuantity(quantity);
 
+  logger.info(`Iniciando seed de ShipNow con cantidad ${qty}`);
+
   try {
     // 1. Generamos clientes y repartidores.
+    logger.debug("Generando usuarios y repartidores");
+
     const mockUsers = generateMockUsers(qty);
     const mockDrivers = generateMockDrivers(qty);
 
@@ -159,6 +198,8 @@ export const seedMockData = async (quantity) => {
     const driversWithHashedPasswords =
       await hashPasswords(mockDrivers);
 
+    logger.debug("Contraseñas procesadas correctamente");
+
     // 3. Guardamos usuarios y repartidores.
     const createdUsers = await userRepository.createMany(
       usersWithHashedPasswords
@@ -168,11 +209,19 @@ export const seedMockData = async (quantity) => {
       driversWithHashedPasswords
     );
 
+    logger.debug(
+      `${createdUsers.length} usuarios y ${createdDrivers.length} repartidores persistidos`
+    );
+
     // 4. Generamos y guardamos plantas.
     const mockProducts = generateMockProducts(qty);
 
     const createdProducts = await productRepository.createMany(
       mockProducts
+    );
+
+    logger.debug(
+      `${createdProducts.length} productos persistidos`
     );
 
     // 5. Generamos y guardamos pedidos.
@@ -184,6 +233,10 @@ export const seedMockData = async (quantity) => {
 
     const createdOrders = await orderRepository.createMany(
       mockOrders
+    );
+
+    logger.info(
+      `${createdOrders.length} pedidos creados correctamente`
     );
 
     // 6. Generamos y guardamos entregas.
@@ -198,23 +251,34 @@ export const seedMockData = async (quantity) => {
         mockDeliveries
       );
 
-    return {
+    logger.info(
+      `${createdDeliveries.length} entregas creadas correctamente`
+    );
+
+    const result = {
       users: createdUsers.length,
       drivers: createdDrivers.length,
       products: createdProducts.length,
       orders: createdOrders.length,
       deliveries: createdDeliveries.length,
     };
+
+    logger.info("Seed de ShipNow completado correctamente");
+
+    return result;
   } catch (error) {
-    // Conservamos los errores de dominio.
     if (error instanceof AppError) {
+      // El middleware global registra el error de dominio.
       throw error;
     }
 
-    // Registramos el error técnico para depuración.
-    console.error("Error al generar y guardar mocks:", error);
+    // Registramos el error técnico mediante Winston.
+    logger.error(
+      `Error al generar y guardar mocks: ${error.message}`,
+      { stack: error.stack }
+    );
 
-    // Enviamos un error controlado al middleware global.
+    // Mantenemos el error controlado de la entrega 3.
     throw new AppError("MOCK_SEED_FAILED");
   }
 };
