@@ -4,7 +4,7 @@ API REST desarrollada como parte del curso **Backend III de Coderhouse**.
 
 ShipNow simula el backend de una tienda online de plantas y productos de jardinería.
 
-El proyecto utiliza una arquitectura por capas, persistencia en MongoDB, generación de datos simulados, manejo centralizado de errores y un sistema profesional de logging mediante Winston.
+El proyecto utiliza una arquitectura por capas, persistencia en MongoDB, generación de datos simulados, manejo centralizado de errores y un sistema de logging mediante Winston.
 
 ---
 
@@ -68,6 +68,7 @@ Incluye:
 - Registro de errores HTTP.
 - Logging de operaciones de mocking y seed.
 - Archivos rotativos para errores.
+- Metadatos estructurados en los registros.
 - Exclusión de logs del repositorio.
 - Endpoint de diagnóstico exclusivo de desarrollo.
 - Pruebas de funcionamiento del logger y rotación por tamaño.
@@ -463,6 +464,10 @@ Las entregas se generan a partir de pedidos y repartidores simulados.
 
 Mantienen las referencias correspondientes mediante ObjectIds.
 
+El generador valida que existan pedidos, que haya al menos un repartidor válido y que la cantidad de entregas solicitada no supere los pedidos disponibles.
+
+Estas validaciones utilizan errores personalizados `AppError`.
+
 ---
 
 ## 10. Seed de MongoDB
@@ -579,6 +584,9 @@ Centraliza:
 | `INVALID_MOCK_QUANTITY` | 400 | Cantidad de mocks inválida |
 | `MOCK_DATA_REQUIRED` | 400 | Faltan datos para generar pedidos |
 | `MOCK_PRODUCT_OUT_OF_STOCK` | 400 | No hay productos disponibles |
+| `MOCK_ORDERS_REQUIRED` | 400 | No hay pedidos para generar entregas |
+| `MOCK_DRIVERS_REQUIRED` | 400 | No hay repartidores válidos |
+| `MOCK_INSUFFICIENT_ORDERS` | 400 | Se solicitan más entregas que pedidos |
 | `MOCK_SEED_FAILED` | 500 | Fallo inesperado durante el seed |
 
 ### Middleware global
@@ -632,10 +640,10 @@ Request
 Middleware / Controller
    |
    v
-Service
+ Service
    |
    v
-AppError
+ AppError
    |
    v
 next(error)
@@ -707,7 +715,7 @@ Resultado esperado: HTTP 400.
 GET /api/products/abc123
 ```
 
-Resultado esperado: HTTP 400.
+Resultado verificado: HTTP 400.
 
 ```json
 {
@@ -781,12 +789,12 @@ La respuesta debe contener diez pedidos simulados.
 ### Prueba 7 — Generación de entregas
 
 ```http
-GET /api/mocks/deliveries?qty=10
+GET /api/mocks/deliveries?qty=3
 ```
 
-Resultado esperado: HTTP 200.
+Resultado verificado: HTTP 200.
 
-La respuesta debe contener diez entregas simuladas.
+La respuesta contiene tres entregas simuladas con los campos `order`, `driver`, `status` y `deliveryAddress`.
 
 ### Prueba 8 — Persistencia en MongoDB
 
@@ -799,6 +807,22 @@ Resultado esperado: HTTP 201.
 Se generan y almacenan tres usuarios, tres repartidores, tres productos, tres pedidos y tres entregas.
 
 **Advertencia:** esta prueba inserta registros reales en la base de datos configurada.
+
+### Prueba 9 — Errores del generador de entregas
+
+Se ejecutaron pruebas directas sobre `generateMockDelivery()` y `generateMockDeliveries()`.
+
+Resultados verificados:
+
+| Situación | Código | HTTP |
+|---|---|---|
+| No existen pedidos | `MOCK_ORDERS_REQUIRED` | 400 |
+| No existen repartidores válidos | `MOCK_DRIVERS_REQUIRED` | 400 |
+| Se solicitan más entregas que pedidos | `MOCK_INSUFFICIENT_ORDERS` | 400 |
+
+Las tres pruebas devolvieron los códigos, estados y mensajes definidos en `errorDictionary.js`.
+
+Estas pruebas se realizaron directamente sobre los generadores. No implican que cada situación sea accesible mediante el endpoint HTTP, ya que el service prepara los datos antes de llamar a las funciones.
 
 ---
 
@@ -831,6 +855,7 @@ Este archivo define:
 - Colores de consola.
 - Formato de mensajes.
 - Fecha y hora de cada registro.
+- Metadatos adicionales.
 - Configuración diferenciada por entorno.
 - Transporte de consola.
 - Transporte de archivos rotativos.
@@ -862,6 +887,7 @@ Los mensajes incluyen:
 - Hora.
 - Nivel de severidad.
 - Mensaje descriptivo.
+- Metadatos adicionales, cuando corresponda.
 
 Ejemplo:
 
@@ -869,6 +895,25 @@ Ejemplo:
 2026-10-22 19:10:01 [info] Conexión a MongoDB establecida correctamente
 2026-10-22 19:10:01 [info] Servidor ShipNow escuchando en el puerto 8080
 ```
+
+El logger también permite incorporar metadatos estructurados para facilitar el diagnóstico de errores.
+
+Entre los metadatos utilizados se encuentran:
+
+- `method`: método HTTP de la solicitud.
+- `path`: ruta solicitada.
+- `statusCode`: código de estado HTTP.
+- `code`: código interno del error.
+
+Ejemplo verificado durante las pruebas:
+
+```text
+2026-10-26 11:15:50 [error] Prueba final de persistencia Winston {"method":"TEST","path":"/verificacion-logger","statusCode":500,"code":"LOGGER_FILE_TEST"}
+```
+
+Los metadatos se agregan al final del registro en formato JSON.
+
+Se comprobó que se conservan tanto en la consola como en los archivos de errores.
 
 La consola utiliza colores diferenciados según el nivel.
 
@@ -945,6 +990,8 @@ Los errores controlados con estados HTTP inferiores a 500 se registran como `war
 
 Los errores internos o inesperados se registran como `error`.
 
+Los registros pueden incluir metadatos como el método HTTP, la ruta solicitada, el estado y el código del error.
+
 Las respuestas HTTP mantienen el formato uniforme definido en el módulo 3.
 
 ### Registro de mocks
@@ -988,14 +1035,13 @@ Los mensajes `info`, `http`, `debug` y `warning` no se guardan en ese transporte
 Ejemplo de archivo:
 
 ```text
-logs/error-2026-10-22.log
+logs/error-2026-10-26.log
 ```
 
-Contenido de ejemplo:
+Contenido verificado:
 
 ```text
-2026-10-22 19:08:24 [error] Prueba del nivel ERROR
-2026-10-22 19:08:24 [fatal] Prueba del nivel FATAL
+2026-10-26 11:15:50 [error] Prueba final de persistencia Winston {"method":"TEST","path":"/verificacion-logger","statusCode":500,"code":"LOGGER_FILE_TEST"}
 ```
 
 La configuración permite rotar los archivos por fecha y tamaño, limitar su conservación y comprimir archivos rotados.
@@ -1134,13 +1180,16 @@ Se verificó la emisión de los seis niveles:
 
 ### Prueba 3 — Persistencia de errores
 
-Se comprobó la creación de:
+Se comprobó la creación de archivos diarios como:
 
 ```text
 logs/error-2026-10-22.log
+logs/error-2026-10-26.log
 ```
 
-El archivo contenía los registros `error` y `fatal` generados durante la prueba.
+El archivo del 22 de octubre contenía los registros `error` y `fatal` generados durante las pruebas.
+
+El 26 de octubre se verificó nuevamente la persistencia de un registro `error`, incluyendo sus metadatos.
 
 ### Prueba 4 — Exclusión de Git
 
@@ -1200,6 +1249,29 @@ Se verificó que el transporte configurado corresponde a `DailyRotateFile`, util
 Se realizó una prueba aislada con un tamaño máximo de `1k` para forzar la rotación mediante la escritura de múltiples registros.
 
 La prueba utiliza la misma librería de rotación integrada en ShipNow, manteniendo intacta la configuración principal de la aplicación.
+
+### Prueba 10 — Persistencia de metadatos
+
+Se ejecutó una prueba directa del logger con el mensaje:
+
+```javascript
+logger.error("Prueba final de persistencia Winston", {
+  method: "TEST",
+  path: "/verificacion-logger",
+  statusCode: 500,
+  code: "LOGGER_FILE_TEST",
+});
+```
+
+Se verificó su salida en consola y su persistencia en `logs/error-2026-10-26.log`.
+
+Resultado:
+
+```text
+2026-10-26 11:15:50 [error] Prueba final de persistencia Winston {"method":"TEST","path":"/verificacion-logger","statusCode":500,"code":"LOGGER_FILE_TEST"}
+```
+
+La prueba confirmó que el formato personalizado conserva los metadatos estructurados en ambos transportes.
 
 ---
 
@@ -1308,6 +1380,12 @@ ls -lah logs/
 cat logs/error-*.log
 ```
 
+Para consultar los últimos registros del archivo correspondiente a una fecha:
+
+```bash
+tail -n 10 logs/error-2026-10-26.log
+```
+
 ---
 
 ## 17. Pruebas realizadas
@@ -1324,6 +1402,9 @@ cat logs/error-*.log
 | Generación de pedidos | Exitosa |
 | Generación de entregas | Exitosa |
 | Persistencia mediante seed | Exitosa |
+| Generador de entregas sin pedidos | Exitosa |
+| Generador de entregas sin repartidores | Exitosa |
+| Generador con pedidos insuficientes | Exitosa |
 
 ### Módulo 4
 
@@ -1338,6 +1419,8 @@ cat logs/error-*.log
 | Endpoint de diagnóstico deshabilitado en producción | Exitosa |
 | Identificación del transporte `DailyRotateFile` | Exitosa |
 | Rotación por tamaño mediante prueba aislada | Exitosa |
+| Conservación de metadatos en consola | Exitosa |
+| Persistencia de metadatos en archivo | Exitosa |
 
 ---
 
@@ -1378,6 +1461,7 @@ cat logs/error-*.log
 - Manejo de rutas inexistentes.
 - Manejo de errores inesperados.
 - Manejo controlado de fallas del seed.
+- Validaciones del generador de entregas mediante `AppError`.
 - Respuestas HTTP uniformes.
 - Pruebas de validación y propagación de errores.
 
@@ -1388,6 +1472,7 @@ cat logs/error-*.log
 - Configuración diferenciada para desarrollo y producción.
 - Transporte de consola con colores.
 - Registros con fecha y hora.
+- Conservación de metadatos estructurados.
 - Logging de conexión a MongoDB.
 - Logging de inicio y errores críticos del servidor.
 - Logging del middleware global de errores.
@@ -1397,6 +1482,7 @@ cat logs/error-*.log
 - Exclusión de logs mediante `.gitignore`.
 - Endpoint de diagnóstico exclusivo de desarrollo.
 - Pruebas de logging y comportamiento en producción.
+- Verificación de persistencia de metadatos en archivos.
 
 ---
 

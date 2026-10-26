@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 import { faker } from "@faker-js/faker";
 
@@ -6,11 +7,15 @@ import {
   USER_ROLES,
 } from "../constants/index.js";
 
+import AppError from "../utils/AppError.js";
+
+// =========================================
+// GENERAR UNA ENTREGA
+// =========================================
+
 export const generateMockDelivery = (orders = [], drivers = []) => {
   if (orders.length === 0) {
-    throw new Error(
-      "Se necesitan pedidos para generar entregas simuladas."
-    );
+    throw new AppError("MOCK_ORDERS_REQUIRED");
   }
 
   const validDrivers = drivers.filter(
@@ -18,9 +23,7 @@ export const generateMockDelivery = (orders = [], drivers = []) => {
   );
 
   if (validDrivers.length === 0) {
-    throw new Error(
-      "Se necesita al menos un repartidor para generar entregas simuladas."
-    );
+    throw new AppError("MOCK_DRIVERS_REQUIRED");
   }
 
   const order = faker.helpers.arrayElement(orders);
@@ -36,15 +39,17 @@ export const generateMockDelivery = (orders = [], drivers = []) => {
   };
 };
 
+// =========================================
+// GENERAR VARIAS ENTREGAS
+// =========================================
+
 export const generateMockDeliveries = (
   quantity = 10,
   orders = [],
   drivers = []
 ) => {
   if (quantity > orders.length) {
-    throw new Error(
-      "No se pueden generar más entregas que pedidos disponibles."
-    );
+    throw new AppError("MOCK_INSUFFICIENT_ORDERS");
   }
 
   const selectedOrders = faker.helpers.arrayElements(
@@ -56,6 +61,10 @@ export const generateMockDeliveries = (
     generateMockDelivery([order], drivers)
   );
 };
+
+// =========================================
+// GENERAR ENTREGAS SIN PERSISTENCIA
+// =========================================
 
 export const generateStandaloneMockDeliveries = (
   quantity = 10,

@@ -5,7 +5,10 @@ import config from "./env.config.js";
 
 const { combine, timestamp, printf, errors, colorize } = winston.format;
 
-// Niveles personalizados de logging
+// =========================================
+// NIVELES PERSONALIZADOS
+// =========================================
+
 const levels = {
   fatal: 0,
   error: 1,
@@ -15,7 +18,10 @@ const levels = {
   debug: 5,
 };
 
-// Colores para la consola
+// =========================================
+// COLORES DE CONSOLA
+// =========================================
+
 const colors = {
   fatal: "red bold",
   error: "red",
@@ -27,19 +33,41 @@ const colors = {
 
 winston.addColors(colors);
 
-// Formato de los mensajes
-const logFormat = printf(({ timestamp, level, message, stack }) => {
-  return `${timestamp} [${level}] ${stack || message}`;
+// =========================================
+// FORMATO DE LOS MENSAJES
+// =========================================
+
+const logFormat = printf((info) => {
+  const { timestamp, level, message, stack, ...metadata } = info;
+
+  const details = Object.fromEntries(
+    Object.entries(metadata).filter(
+      ([key]) => key !== "splat"
+    )
+  );
+
+  const metadataText =
+    Object.keys(details).length > 0
+      ? ` ${JSON.stringify(details)}`
+      : "";
+
+  return `${timestamp} [${level}] ${stack || message}${metadataText}`;
 });
 
-// Formato para archivos
+// =========================================
+// FORMATO PARA ARCHIVOS
+// =========================================
+
 const fileFormat = combine(
   errors({ stack: true }),
   timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
   logFormat
 );
 
-// Formato para consola
+// =========================================
+// FORMATO PARA CONSOLA
+// =========================================
+
 const consoleFormat = combine(
   errors({ stack: true }),
   timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
@@ -47,17 +75,25 @@ const consoleFormat = combine(
   logFormat
 );
 
-// Entorno de ejecución
+// =========================================
+// ENTORNO DE EJECUCIÓN
+// =========================================
+
 const isProduction = config.nodeEnv === "production";
 
-// Transporte de consola
+// =========================================
+// TRANSPORTE DE CONSOLA
+// =========================================
+
 const consoleTransport = new winston.transports.Console({
   level: isProduction ? "info" : "debug",
   format: consoleFormat,
 });
 
-// Transporte de archivos con rotación
-// Guarda exclusivamente error y fatal
+// =========================================
+// TRANSPORTE DE ARCHIVOS
+// =========================================
+
 const errorFileTransport = new DailyRotateFile({
   dirname: "logs",
   filename: "error-%DATE%.log",
@@ -69,7 +105,10 @@ const errorFileTransport = new DailyRotateFile({
   format: fileFormat,
 });
 
-// Logger centralizado
+// =========================================
+// LOGGER CENTRALIZADO
+// =========================================
+
 const logger = winston.createLogger({
   levels,
   level: isProduction ? "info" : "debug",

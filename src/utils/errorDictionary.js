@@ -22,6 +22,12 @@ const errorDictionary = {
     message: "Los datos enviados no son válidos",
   },
 
+  INVALID_OBJECT_ID: {
+    statusCode: 400,
+    code: "INVALID_OBJECT_ID",
+    message: "El ID proporcionado no es válido",
+  },
+
   // =========================================
   // ERRORES DE USUARIOS
   // =========================================
@@ -74,6 +80,24 @@ const errorDictionary = {
     statusCode: 400,
     code: "MOCK_PRODUCT_OUT_OF_STOCK",
     message: "Se necesita al menos un producto con stock para generar pedidos",
+  },
+
+  MOCK_ORDERS_REQUIRED: {
+    statusCode: 400,
+    code: "MOCK_ORDERS_REQUIRED",
+    message: "Se necesitan pedidos para generar entregas simuladas",
+  },
+
+  MOCK_DRIVERS_REQUIRED: {
+    statusCode: 400,
+    code: "MOCK_DRIVERS_REQUIRED",
+    message: "Se necesita al menos un repartidor para generar entregas simuladas",
+  },
+
+  MOCK_INSUFFICIENT_ORDERS: {
+    statusCode: 400,
+    code: "MOCK_INSUFFICIENT_ORDERS",
+    message: "No se pueden generar más entregas que pedidos disponibles",
   },
 
   MOCK_SEED_FAILED: {
