@@ -3,10 +3,23 @@ import AppError from "../utils/AppError.js";
 import errorDictionary from "../utils/errorDictionary.js";
 import logger from "../config/logger.config.js";
 
+// ============================================
+// MIDDLEWARE CENTRALIZADO DE ERRORES
+// ============================================
+
 const errorHandler = (error, req, res, next) => {
+  // Si la respuesta ya comenzó, delegar a Express.
+  if (res.headersSent) {
+    return next(error);
+  }
+
   const isAppError = error instanceof AppError;
 
   const internalError = errorDictionary.INTERNAL_SERVER_ERROR;
+
+  // ============================================
+  // IDENTIFICACIÓN DEL ERROR
+  // ============================================
 
   const statusCode = isAppError
     ? error.statusCode
@@ -16,11 +29,15 @@ const errorHandler = (error, req, res, next) => {
     ? error.code
     : internalError.code;
 
-  const message = isAppError
-    ? error.message
-    : internalError.message;
+  // No exponer detalles internos de errores 5xx.
+  const message = statusCode >= 500
+    ? internalError.message
+    : error.message;
 
-  // Información contextual para investigar el error
+  // ============================================
+  // CONTEXTO PARA LOGGING
+  // ============================================
+
   const errorContext = {
     method: req.method,
     path: req.originalUrl,
@@ -28,14 +45,16 @@ const errorHandler = (error, req, res, next) => {
     code,
   };
 
+  // ============================================
+  // REGISTRO DEL ERROR
+  // ============================================
+
   if (isAppError && statusCode < 500) {
-    // Errores esperados de validación o negocio
     logger.warning(
       `${code}: ${message}`,
       errorContext
     );
   } else {
-    // Errores del servidor o fallas inesperadas
     logger.error(
       `${code}: ${message}`,
       {
@@ -46,7 +65,10 @@ const errorHandler = (error, req, res, next) => {
     );
   }
 
-  // Mantener el contrato HTTP de la API
+  // ============================================
+  // RESPUESTA HTTP ESTANDARIZADA
+  // ============================================
+
   return res.status(statusCode).json({
     status: "error",
     code,

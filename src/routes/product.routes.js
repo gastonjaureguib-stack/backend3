@@ -1,22 +1,37 @@
+
 import { Router } from "express";
 
 import productController from "../controllers/product.controller.js";
+
 import validateObjectId from "../middlewares/validateObjectId.middleware.js";
 import validate from "../middlewares/validate.middleware.js";
+
 import {
   createProductSchema,
   updateProductSchema,
+  adjustProductStockSchema,
 } from "../validations/product.validation.js";
 
 const router = Router();
 
-router.get("/", productController.getAll);
+// ============================================
+// CONSULTAR PRODUCTOS
+// ============================================
+
+router.get(
+  "/",
+  productController.getAll
+);
 
 router.get(
   "/:id",
-  validateObjectId,
+  validateObjectId(),
   productController.getById
 );
+
+// ============================================
+// CREAR PRODUCTO
+// ============================================
 
 router.post(
   "/",
@@ -24,16 +39,35 @@ router.post(
   productController.create
 );
 
+// ============================================
+// ACTUALIZAR DATOS GENERALES
+// ============================================
+
 router.patch(
   "/:id",
-  validateObjectId,
+  validateObjectId(),
   validate(updateProductSchema),
   productController.update
 );
 
+// ============================================
+// AJUSTAR INVENTARIO
+// ============================================
+
+router.patch(
+  "/:id/stock",
+  validateObjectId(),
+  validate(adjustProductStockSchema),
+  productController.adjustStock
+);
+
+// ============================================
+// ELIMINAR PRODUCTO
+// ============================================
+
 router.delete(
   "/:id",
-  validateObjectId,
+  validateObjectId(),
   productController.delete
 );
 

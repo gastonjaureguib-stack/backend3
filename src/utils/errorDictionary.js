@@ -60,6 +60,116 @@ const errorDictionary = {
     message: "Estado de producto inválido",
   },
 
+  PRODUCT_INSUFFICIENT_STOCK: {
+    statusCode: 409,
+    code: "PRODUCT_INSUFFICIENT_STOCK",
+    message: "Stock insuficiente para realizar el ajuste",
+  },
+
+  PRODUCT_IN_USE: {
+    statusCode: 409,
+    code: "PRODUCT_IN_USE",
+    message: "No se puede eliminar un producto asociado a pedidos",
+  },
+
+  PRODUCT_STOCK_CONFLICT: {
+    statusCode: 409,
+    code: "PRODUCT_STOCK_CONFLICT",
+    message: "No se pudo completar el ajuste de inventario por un conflicto",
+  },
+
+  // =========================================
+  // ERRORES DE PEDIDOS
+  // =========================================
+
+  ORDER_NOT_FOUND: {
+    statusCode: 404,
+    code: "ORDER_NOT_FOUND",
+    message: "Pedido no encontrado",
+  },
+
+  ORDER_INSUFFICIENT_STOCK: {
+    statusCode: 409,
+    code: "ORDER_INSUFFICIENT_STOCK",
+    message: "Stock insuficiente para completar el pedido",
+  },
+
+  ORDER_INVALID_STATUS_TRANSITION: {
+    statusCode: 409,
+    code: "ORDER_INVALID_STATUS_TRANSITION",
+    message: "La transición de estado del pedido no está permitida",
+  },
+
+  ORDER_ALREADY_CANCELLED: {
+    statusCode: 409,
+    code: "ORDER_ALREADY_CANCELLED",
+    message: "El pedido ya se encuentra cancelado",
+  },
+
+  ORDER_CANNOT_BE_CANCELLED: {
+    statusCode: 409,
+    code: "ORDER_CANNOT_BE_CANCELLED",
+    message: "El pedido no puede cancelarse en su estado actual",
+  },
+
+  ORDER_CANNOT_BE_DELETED: {
+    statusCode: 409,
+    code: "ORDER_CANNOT_BE_DELETED",
+    message: "El pedido no puede eliminarse porque debe conservarse su historial",
+  },
+
+  ORDER_DELIVERY_CONFLICT: {
+    statusCode: 409,
+    code: "ORDER_DELIVERY_CONFLICT",
+    message: "La operación del pedido entra en conflicto con su entrega",
+  },
+
+  // =========================================
+  // ERRORES DE ENTREGAS
+  // =========================================
+
+  DELIVERY_NOT_FOUND: {
+    statusCode: 404,
+    code: "DELIVERY_NOT_FOUND",
+    message: "Entrega no encontrada",
+  },
+
+  DELIVERY_ALREADY_EXISTS: {
+    statusCode: 409,
+    code: "DELIVERY_ALREADY_EXISTS",
+    message: "Ya existe una entrega asociada a este pedido",
+  },
+
+  DELIVERY_INVALID_STATUS_TRANSITION: {
+    statusCode: 409,
+    code: "DELIVERY_INVALID_STATUS_TRANSITION",
+    message: "La transición de estado de la entrega no está permitida",
+  },
+
+  DELIVERY_INVALID_DRIVER: {
+    statusCode: 400,
+    code: "DELIVERY_INVALID_DRIVER",
+    message: "El usuario asignado no es un repartidor válido",
+  },
+
+  DELIVERY_DRIVER_NOT_FOUND: {
+    statusCode: 404,
+    code: "DELIVERY_DRIVER_NOT_FOUND",
+    message: "Repartidor no encontrado",
+  },
+
+  DELIVERY_ORDER_NOT_ELIGIBLE: {
+    statusCode: 409,
+    code: "DELIVERY_ORDER_NOT_ELIGIBLE",
+    message: "El pedido no cumple las condiciones para generar o actualizar una entrega",
+  },
+
+  DELIVERY_CANNOT_BE_DELETED: {
+    statusCode: 409,
+    code: "DELIVERY_CANNOT_BE_DELETED",
+    message: "La entrega no puede eliminarse porque debe conservarse su historial",
+  },
+
   // =========================================
   // ERRORES DE MOCKS
   // =========================================

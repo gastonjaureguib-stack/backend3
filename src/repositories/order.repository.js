@@ -1,44 +1,133 @@
+
 import Order from "../models/order.model.js";
 
 class OrderRepository {
-  async getAll() {
+  async getAll(options = {}) {
+    const { session = null } = options;
+
     return Order.find()
       .populate("user", "firstName lastName email role")
       .populate("products.product", "name category price")
       .select("-__v")
       .sort({ createdAt: -1 })
+      .session(session)
       .lean();
   }
 
-  async getById(id) {
+  async getById(id, options = {}) {
+    const { session = null } = options;
+
     return Order.findById(id)
       .populate("user", "firstName lastName email role")
       .populate("products.product", "name category price")
       .select("-__v")
+      .session(session)
       .lean();
   }
 
-  async create(orderData) {
-    return Order.create(orderData);
+  async existsByProductId(productId, options = {}) {
+    const { session = null } = options;
+
+    return Order.exists({
+      "products.product": productId,
+    }).session(session);
   }
 
-  async createMany(ordersData) {
-    return Order.insertMany(ordersData);
+  async create(orderData, options = {}) {
+    const { session = null } = options;
+
+    if (!session) {
+      return Order.create(orderData);
+    }
+
+    const [order] = await Order.create(
+      [orderData],
+      { session }
+    );
+
+    return order;
   }
 
-  async update(id, orderData) {
+  async createMany(ordersData, options = {}) {
+    const { session = null } = options;
+
+    return Order.insertMany(
+      ordersData,
+      session ? { session } : {}
+    );
+  }
+
+  async update(id, orderData, options = {}) {
+    const { session = null } = options;
+
     return Order.findByIdAndUpdate(
       id,
       orderData,
       {
-        new: true,
+        returnDocument: "after",
         runValidators: true,
+        session,
       }
     ).select("-__v");
   }
 
-  async delete(id) {
-    return Order.findByIdAndDelete(id);
+  async updateIfStatus(
+    id,
+    expectedStatus,
+    orderData,
+    options = {}
+  ) {
+    const { session = null } = options;
+
+    return Order.findOneAndUpdate(
+      {
+        _id: id,
+        status: expectedStatus,
+      },
+      {
+        $set: orderData,
+      },
+      {
+        returnDocument: "after",
+        runValidators: true,
+        session,
+      }
+    ).select("-__v");
+  }
+
+  // Genera una escritura real sobre el pedido sin
+  // modificar su estado ni sus datos comerciales.
+  // Permite detectar conflictos entre transacciones
+  // que operan sobre el mismo pedido.
+  async touchIfStatus(
+    id,
+    expectedStatus,
+    options = {}
+  ) {
+    const { session = null } = options;
+
+    return Order.findOneAndUpdate(
+      {
+        _id: id,
+        status: expectedStatus,
+      },
+      {
+        $inc: { __v: 1 },
+      },
+      {
+        returnDocument: "after",
+        session,
+      }
+    ).select("-__v");
+  }
+
+  async delete(id, options = {}) {
+    const { session = null } = options;
+
+    return Order.findByIdAndDelete(
+      id,
+      { session }
+    );
   }
 }
 

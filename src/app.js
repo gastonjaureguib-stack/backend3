@@ -1,9 +1,14 @@
 
 import express from "express";
+import swaggerUi from "swagger-ui-express";
 
 import productRouter from "./routes/product.routes.js";
 import userRouter from "./routes/user.routes.js";
 import mockRouter from "./routes/mock.routes.js";
+import orderRouter from "./routes/order.routes.js";
+import deliveryRouter from "./routes/delivery.routes.js";
+
+import swaggerConfig from "./config/swagger.config.js";
 
 import AppError from "./utils/AppError.js";
 import errorHandler from "./middlewares/error.middleware.js";
@@ -13,24 +18,39 @@ import config from "./config/env.config.js";
 
 const app = express();
 
-// =========================================
+// ============================================
 // MIDDLEWARES GENERALES
-// =========================================
+// ============================================
 
 app.use(express.json());
 
-// =========================================
-// RUTAS
-// =========================================
+// ============================================
+// DOCUMENTACIÓN SWAGGER
+// ============================================
+
+app.use(
+  "/api/docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerConfig, {
+    explorer: true,
+    customSiteTitle: "ShipNow API Documentation",
+  })
+);
+
+// ============================================
+// RUTAS DE LA API
+// ============================================
 
 app.use("/api/products", productRouter);
 app.use("/api/users", userRouter);
+app.use("/api/orders", orderRouter);
+app.use("/api/deliveries", deliveryRouter);
 app.use("/api/mocks", mockRouter);
 
-// =========================================
+// ============================================
 // ENDPOINT DE PRUEBA DEL LOGGER
 // SOLO DISPONIBLE EN DESARROLLO
-// =========================================
+// ============================================
 
 if (config.nodeEnv === "development") {
   app.get("/api/logger/test", (req, res) => {
@@ -56,17 +76,17 @@ if (config.nodeEnv === "development") {
   });
 }
 
-// =========================================
+// ============================================
 // RUTAS NO ENCONTRADAS
-// =========================================
+// ============================================
 
 app.use((req, res, next) => {
   next(new AppError("ROUTE_NOT_FOUND"));
 });
 
-// =========================================
+// ============================================
 // MIDDLEWARE GLOBAL DE ERRORES
-// =========================================
+// ============================================
 
 app.use(errorHandler);
 

@@ -2,14 +2,18 @@
 import mongoose from "mongoose";
 import AppError from "../utils/AppError.js";
 
-const validateObjectId = (req, res, next) => {
-  const { id } = req.params;
+const validateObjectId = (paramName = "id") => {
+  return (req, res, next) => {
+    const value = req.params[paramName];
 
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return next(new AppError("INVALID_OBJECT_ID"));
-  }
+    if (!mongoose.isValidObjectId(value)) {
+      return next(
+        new AppError("INVALID_OBJECT_ID")
+      );
+    }
 
-  next();
+    next();
+  };
 };
 
 export default validateObjectId;

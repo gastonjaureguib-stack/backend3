@@ -1,6 +1,11 @@
+
 import { z } from "zod";
 
-export const createProductSchema = z.object({
+// ============================================
+// CAMPOS GENERALES DEL PRODUCTO
+// ============================================
+
+const productFields = {
   name: z
     .string()
     .trim()
@@ -21,19 +26,56 @@ export const createProductSchema = z.object({
 
   price: z
     .number()
+    .finite("El precio debe ser un número finito")
     .min(0, "El precio no puede ser negativo"),
+};
 
-  stock: z
-    .number()
-    .int("El stock debe ser un número entero")
-    .min(0, "El stock no puede ser negativo"),
-});
+// ============================================
+// CREACIÓN DE PRODUCTOS
+// ============================================
 
-export const updateProductSchema = createProductSchema
+export const createProductSchema = z
+  .object({
+    ...productFields,
+
+    stock: z
+      .number()
+      .int("El stock debe ser un número entero")
+      .nonnegative("El stock no puede ser negativo")
+      .safe("El stock supera el rango seguro permitido"),
+  })
+  .strict();
+
+// ============================================
+// ACTUALIZACIÓN DE DATOS GENERALES
+// ============================================
+
+export const updateProductSchema = z
+  .object(productFields)
   .partial()
+  .strict()
   .refine(
     (data) => Object.keys(data).length > 0,
     {
       message: "Debes enviar al menos un campo para actualizar",
     }
   );
+
+// ============================================
+// AJUSTES DE INVENTARIO
+// ============================================
+
+export const adjustProductStockSchema = z
+  .object({
+    adjustment: z
+      .number()
+      .int("El ajuste debe ser un número entero")
+      .safe("El ajuste supera el rango seguro permitido")
+      .refine(
+        (value) => value !== 0,
+        {
+          message: "El ajuste debe ser distinto de cero",
+        }
+      ),
+  })
+  .strict();
