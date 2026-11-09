@@ -1,17 +1,9 @@
 
 import { RESPONSE_STATUS } from "../../constants/index.js";
 
-// ============================================
-// DOCUMENTACIÓN OPENAPI - MOCKS
-// ============================================
-
 const schemaRef = (name) => ({
   $ref: `#/components/schemas/${name}`,
 });
-
-// ============================================
-// PARÁMETRO COMPARTIDO
-// ============================================
 
 const quantityParameter = {
   name: "qty",
@@ -26,10 +18,6 @@ const quantityParameter = {
   },
   example: 5,
 };
-
-// ============================================
-// RESPUESTAS EXITOSAS
-// ============================================
 
 const mockListResponse = (itemSchema, description) => ({
   description,
@@ -57,10 +45,6 @@ const mockListResponse = (itemSchema, description) => ({
     },
   },
 });
-
-// ============================================
-// RESPUESTAS DE ERROR
-// ============================================
 
 const errorResponse = (description, errors) => ({
   description,
@@ -103,16 +87,6 @@ const quantityError = errorResponse(
   "Cantidad de registros inválida.",
   [invalidQuantity]
 );
-
-// ============================================
-// SCHEMAS DE DATOS SIMULADOS
-// ============================================
-
-// Los mocks no necesariamente tienen la misma
-// estructura que los documentos persistidos.
-// Estos schemas describen los campos conocidos
-// sin exigir propiedades que no se verificaron
-// todavía contra los generadores.
 
 const mockUser = {
   type: "object",
@@ -189,10 +163,6 @@ const mockDelivery = {
   },
 };
 
-// ============================================
-// UTILIDAD PARA GENERADORES GET
-// ============================================
-
 const mockGetOperation = ({
   summary,
   description,
@@ -213,10 +183,6 @@ const mockGetOperation = ({
     500: internalError,
   },
 });
-
-// ============================================
-// ENDPOINTS
-// ============================================
 
 const mockPaths = {
   "/api/mocks/users": {

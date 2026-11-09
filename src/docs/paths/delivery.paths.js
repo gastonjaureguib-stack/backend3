@@ -1,10 +1,6 @@
 
 import { DELIVERY_STATUS } from "../../constants/index.js";
 
-// ============================================
-// REFERENCIAS OPENAPI
-// ============================================
-
 const schemaRef = (name) => ({
   $ref: `#/components/schemas/${name}`,
 });
@@ -14,10 +10,6 @@ const jsonContent = (schema) => ({
     schema,
   },
 });
-
-// ============================================
-// RESPUESTAS EXITOSAS
-// ============================================
 
 const successResponse = (
   payloadSchema = null,
@@ -54,10 +46,6 @@ const successResponse = (
     }),
   };
 };
-
-// ============================================
-// RESPUESTAS DE ERROR
-// ============================================
 
 const errorResponse = (description, errors) => ({
   description,
@@ -143,10 +131,6 @@ const internalError = errorResponse(
   [errors.internal]
 );
 
-// ============================================
-// PARÁMETROS DE RUTA
-// ============================================
-
 const deliveryIdParameter = {
   name: "id",
   in: "path",
@@ -165,15 +149,7 @@ const orderIdParameter = {
   schema: schemaRef("ObjectId"),
 };
 
-// ============================================
-// ENDPOINTS DE DELIVERIES
-// ============================================
-
 const deliveryPaths = {
-  // ==========================================
-  // /api/deliveries
-  // ==========================================
-
   "/api/deliveries": {
     get: {
       tags: ["Deliveries"],
@@ -270,10 +246,6 @@ const deliveryPaths = {
     },
   },
 
-  // ==========================================
-  // GET /api/deliveries/order/{orderId}
-  // ==========================================
-
   "/api/deliveries/order/{orderId}": {
     parameters: [orderIdParameter],
 
@@ -306,10 +278,6 @@ const deliveryPaths = {
       },
     },
   },
-
-  // ==========================================
-  // /api/deliveries/{id}
-  // ==========================================
 
   "/api/deliveries/{id}": {
     parameters: [deliveryIdParameter],
@@ -452,10 +420,6 @@ const deliveryPaths = {
       },
     },
   },
-
-  // ==========================================
-  // PATCH /api/deliveries/{id}/cancel
-  // ==========================================
 
   "/api/deliveries/{id}/cancel": {
     parameters: [deliveryIdParameter],

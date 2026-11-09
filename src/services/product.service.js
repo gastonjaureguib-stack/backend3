@@ -7,10 +7,6 @@ import orderRepository from "../repositories/order.repository.js";
 import { PRODUCT_STATUS } from "../constants/index.js";
 import AppError from "../utils/AppError.js";
 
-// ============================================
-// CAMPOS PERMITIDOS PARA ACTUALIZACIÓN
-// ============================================
-
 const PRODUCT_FIELDS = [
   "name",
   "description",
@@ -18,15 +14,7 @@ const PRODUCT_FIELDS = [
   "price",
 ];
 
-// ============================================
-// SERVICIO DE PRODUCTOS
-// ============================================
-
 class ProductService {
-  // ============================================
-  // OBTENER TODOS LOS PRODUCTOS
-  // ============================================
-
   async getAllProducts(query = {}) {
     const filters = {};
 
@@ -49,10 +37,6 @@ class ProductService {
     return productRepository.getAll(filters);
   }
 
-  // ============================================
-  // OBTENER PRODUCTO POR ID
-  // ============================================
-
   async getProductById(id) {
     const product = await productRepository.getById(id);
 
@@ -62,10 +46,6 @@ class ProductService {
 
     return product;
   }
-
-  // ============================================
-  // CREAR PRODUCTO
-  // ============================================
 
   async createProduct(productData) {
     if (
@@ -92,10 +72,6 @@ class ProductService {
 
     return productRepository.create(data);
   }
-
-  // ============================================
-  // ACTUALIZAR DATOS GENERALES
-  // ============================================
 
   async updateProduct(id, productData) {
     if (
@@ -130,10 +106,6 @@ class ProductService {
     );
   }
 
-  // ============================================
-  // AJUSTAR INVENTARIO
-  // ============================================
-
   async adjustProductStock(id, adjustment) {
     if (
       !Number.isSafeInteger(adjustment) ||
@@ -157,9 +129,7 @@ class ProductService {
         const nextStock =
           product.stock + adjustment;
 
-        if (
-          !Number.isSafeInteger(nextStock)
-        ) {
+        if (!Number.isSafeInteger(nextStock)) {
           throw new AppError("VALIDATION_ERROR");
         }
 
@@ -193,10 +163,6 @@ class ProductService {
       }
     );
   }
-
-  // ============================================
-  // ELIMINAR PRODUCTO
-  // ============================================
 
   async deleteProduct(id) {
     return mongoose.connection.transaction(

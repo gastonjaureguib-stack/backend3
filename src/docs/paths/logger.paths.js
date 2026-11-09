@@ -1,10 +1,6 @@
 
 import { RESPONSE_STATUS } from "../../constants/index.js";
 
-// ============================================
-// DOCUMENTACIÓN OPENAPI - LOGGER
-// ============================================
-
 const LOGGER_LEVELS = [
   "debug",
   "http",
@@ -13,10 +9,6 @@ const LOGGER_LEVELS = [
   "error",
   "fatal",
 ];
-
-// ============================================
-// ENDPOINTS
-// ============================================
 
 const loggerPaths = {
   "/api/logger/test": {

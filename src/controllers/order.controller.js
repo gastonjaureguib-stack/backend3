@@ -1,11 +1,8 @@
+
 import orderService from "../services/order.service.js";
 import { RESPONSE_STATUS } from "../constants/index.js";
 
 class OrderController {
-  // ============================================
-  // OBTENER TODOS LOS PEDIDOS
-  // ============================================
-
   async getAll(req, res, next) {
     try {
       const orders = await orderService.getAllOrders();
@@ -18,10 +15,6 @@ class OrderController {
       return next(error);
     }
   }
-
-  // ============================================
-  // OBTENER PEDIDO POR ID
-  // ============================================
 
   async getById(req, res, next) {
     try {
@@ -38,10 +31,6 @@ class OrderController {
     }
   }
 
-  // ============================================
-  // CREAR PEDIDO
-  // ============================================
-
   async create(req, res, next) {
     try {
       const order = await orderService.createOrder(
@@ -57,10 +46,6 @@ class OrderController {
       return next(error);
     }
   }
-
-  // ============================================
-  // ACTUALIZAR PEDIDO
-  // ============================================
 
   async update(req, res, next) {
     try {
@@ -80,10 +65,6 @@ class OrderController {
       return next(error);
     }
   }
-
-  // ============================================
-  // ELIMINAR PEDIDO
-  // ============================================
 
   async delete(req, res, next) {
     try {

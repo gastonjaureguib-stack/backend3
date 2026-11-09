@@ -1,11 +1,12 @@
 
 import dotenv from "dotenv";
 
-dotenv.config();
+const isTestEnvironment = process.env.NODE_ENV === "test";
 
-// ============================================
-// VARIABLES DE ENTORNO OBLIGATORIAS
-// ============================================
+dotenv.config({
+  path: isTestEnvironment ? ".env.test" : ".env",
+  override: isTestEnvironment,
+});
 
 const requiredEnvVars = [
   "PORT",
@@ -21,10 +22,6 @@ for (const envVar of requiredEnvVars) {
   }
 }
 
-// ============================================
-// VALIDAR PUERTO
-// ============================================
-
 const port = Number(process.env.PORT);
 
 if (
@@ -37,9 +34,40 @@ if (
   );
 }
 
-// ============================================
-// CONFIGURACIÓN CENTRALIZADA
-// ============================================
+if (isTestEnvironment) {
+  if (process.env.NODE_ENV !== "test") {
+    throw new Error(
+      "El entorno de testing no está configurado correctamente"
+    );
+  }
+
+  let mongoUrl;
+
+  try {
+    mongoUrl = new URL(process.env.MONGODB_URI);
+  } catch {
+    throw new Error(
+      "La URI de MongoDB para testing no es válida"
+    );
+  }
+
+  if (
+    mongoUrl.protocol !== "mongodb:" ||
+    mongoUrl.hostname !== "127.0.0.1" ||
+    mongoUrl.port !== "27017" ||
+    mongoUrl.pathname !== "/shipnow_test"
+  ) {
+    throw new Error(
+      "Las pruebas deben utilizar MongoDB local y la base shipnow_test"
+    );
+  }
+
+  if (mongoUrl.searchParams.get("replicaSet") !== "rs0") {
+    throw new Error(
+      "Las pruebas requieren el replica set rs0"
+    );
+  }
+}
 
 const config = Object.freeze({
   port,

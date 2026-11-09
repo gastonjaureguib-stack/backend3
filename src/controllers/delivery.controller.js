@@ -3,10 +3,6 @@ import deliveryService from "../services/delivery.service.js";
 import { RESPONSE_STATUS } from "../constants/index.js";
 
 class DeliveryController {
-  // ============================================
-  // OBTENER TODAS LAS ENTREGAS
-  // ============================================
-
   async getAll(req, res, next) {
     try {
       const deliveries =
@@ -20,10 +16,6 @@ class DeliveryController {
       return next(error);
     }
   }
-
-  // ============================================
-  // OBTENER ENTREGA POR ID
-  // ============================================
 
   async getById(req, res, next) {
     try {
@@ -40,10 +32,6 @@ class DeliveryController {
       return next(error);
     }
   }
-
-  // ============================================
-  // OBTENER ENTREGA POR PEDIDO
-  // ============================================
 
   async getByOrderId(req, res, next) {
     try {
@@ -63,10 +51,6 @@ class DeliveryController {
     }
   }
 
-  // ============================================
-  // CREAR ENTREGA
-  // ============================================
-
   async create(req, res, next) {
     try {
       const delivery =
@@ -81,10 +65,6 @@ class DeliveryController {
       return next(error);
     }
   }
-
-  // ============================================
-  // ACTUALIZAR ENTREGA
-  // ============================================
 
   async update(req, res, next) {
     try {
@@ -106,10 +86,6 @@ class DeliveryController {
     }
   }
 
-  // ============================================
-  // CANCELAR ENTREGA
-  // ============================================
-
   async cancel(req, res, next) {
     try {
       const { id } = req.params;
@@ -126,10 +102,6 @@ class DeliveryController {
       return next(error);
     }
   }
-
-  // ============================================
-  // ELIMINAR ENTREGA
-  // ============================================
 
   async delete(req, res, next) {
     try {

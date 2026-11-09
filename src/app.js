@@ -18,15 +18,7 @@ import config from "./config/env.config.js";
 
 const app = express();
 
-// ============================================
-// MIDDLEWARES GENERALES
-// ============================================
-
 app.use(express.json());
-
-// ============================================
-// DOCUMENTACIÓN SWAGGER
-// ============================================
 
 app.use(
   "/api/docs",
@@ -37,22 +29,16 @@ app.use(
   })
 );
 
-// ============================================
-// RUTAS DE LA API
-// ============================================
-
 app.use("/api/products", productRouter);
 app.use("/api/users", userRouter);
 app.use("/api/orders", orderRouter);
 app.use("/api/deliveries", deliveryRouter);
 app.use("/api/mocks", mockRouter);
 
-// ============================================
-// ENDPOINT DE PRUEBA DEL LOGGER
-// SOLO DISPONIBLE EN DESARROLLO
-// ============================================
-
-if (config.nodeEnv === "development") {
+if (
+  config.nodeEnv === "development" ||
+  config.nodeEnv === "test"
+) {
   app.get("/api/logger/test", (req, res) => {
     logger.debug("Prueba del nivel DEBUG");
     logger.http("Prueba del nivel HTTP");
@@ -76,17 +62,9 @@ if (config.nodeEnv === "development") {
   });
 }
 
-// ============================================
-// RUTAS NO ENCONTRADAS
-// ============================================
-
 app.use((req, res, next) => {
   next(new AppError("ROUTE_NOT_FOUND"));
 });
-
-// ============================================
-// MIDDLEWARE GLOBAL DE ERRORES
-// ============================================
 
 app.use(errorHandler);
 

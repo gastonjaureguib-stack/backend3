@@ -6,12 +6,10 @@ import logger from "./config/logger.config.js";
 
 const startServer = async () => {
   try {
-    // Conexión a MongoDB
     await mongoose.connect(config.mongodbUri);
 
     logger.info("Conexión a MongoDB establecida correctamente");
 
-    // Inicio del servidor HTTP
     const server = app.listen(config.port);
 
     server.on("listening", () => {

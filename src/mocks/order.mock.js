@@ -9,10 +9,6 @@ import {
 
 import AppError from "../utils/AppError.js";
 
-// =========================================
-// GENERAR UN PEDIDO
-// =========================================
-
 export const generateMockOrder = (users = [], products = []) => {
   if (users.length === 0 || products.length === 0) {
     throw new AppError("MOCK_DATA_REQUIRED");
@@ -53,10 +49,6 @@ export const generateMockOrder = (users = [], products = []) => {
   };
 };
 
-// =========================================
-// GENERAR VARIOS PEDIDOS
-// =========================================
-
 export const generateMockOrders = (
   quantity = 10,
   users = [],
@@ -66,10 +58,6 @@ export const generateMockOrders = (
     generateMockOrder(users, products)
   );
 };
-
-// =========================================
-// GENERAR PEDIDOS SIN PERSISTENCIA
-// =========================================
 
 export const generateStandaloneMockOrders = (
   quantity = 10,

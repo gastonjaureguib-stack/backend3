@@ -5,10 +5,6 @@ import config from "./env.config.js";
 
 const { combine, timestamp, printf, errors, colorize } = winston.format;
 
-// =========================================
-// NIVELES PERSONALIZADOS
-// =========================================
-
 const levels = {
   fatal: 0,
   error: 1,
@@ -17,10 +13,6 @@ const levels = {
   http: 4,
   debug: 5,
 };
-
-// =========================================
-// COLORES DE CONSOLA
-// =========================================
 
 const colors = {
   fatal: "red bold",
@@ -32,10 +24,6 @@ const colors = {
 };
 
 winston.addColors(colors);
-
-// =========================================
-// FORMATO DE LOS MENSAJES
-// =========================================
 
 const logFormat = printf((info) => {
   const { timestamp, level, message, stack, ...metadata } = info;
@@ -54,19 +42,11 @@ const logFormat = printf((info) => {
   return `${timestamp} [${level}] ${stack || message}${metadataText}`;
 });
 
-// =========================================
-// FORMATO PARA ARCHIVOS
-// =========================================
-
 const fileFormat = combine(
   errors({ stack: true }),
   timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
   logFormat
 );
-
-// =========================================
-// FORMATO PARA CONSOLA
-// =========================================
 
 const consoleFormat = combine(
   errors({ stack: true }),
@@ -75,24 +55,12 @@ const consoleFormat = combine(
   logFormat
 );
 
-// =========================================
-// ENTORNO DE EJECUCIÓN
-// =========================================
-
 const isProduction = config.nodeEnv === "production";
-
-// =========================================
-// TRANSPORTE DE CONSOLA
-// =========================================
 
 const consoleTransport = new winston.transports.Console({
   level: isProduction ? "info" : "debug",
   format: consoleFormat,
 });
-
-// =========================================
-// TRANSPORTE DE ARCHIVOS
-// =========================================
 
 const errorFileTransport = new DailyRotateFile({
   dirname: "logs",
@@ -104,10 +72,6 @@ const errorFileTransport = new DailyRotateFile({
   zippedArchive: true,
   format: fileFormat,
 });
-
-// =========================================
-// LOGGER CENTRALIZADO
-// =========================================
 
 const logger = winston.createLogger({
   levels,

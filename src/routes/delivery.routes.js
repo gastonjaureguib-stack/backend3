@@ -13,14 +13,7 @@ import {
 
 const router = Router();
 
-// ============================================
-// CONSULTAR ENTREGAS
-// ============================================
-
-router.get(
-  "/",
-  deliveryController.getAll
-);
+router.get("/", deliveryController.getAll);
 
 router.get(
   "/order/:orderId",
@@ -34,19 +27,11 @@ router.get(
   deliveryController.getById
 );
 
-// ============================================
-// CREAR ENTREGA
-// ============================================
-
 router.post(
   "/",
   validate(createDeliverySchema),
   deliveryController.create
 );
-
-// ============================================
-// ACTUALIZAR ENTREGA
-// ============================================
 
 router.patch(
   "/:id",
@@ -55,19 +40,11 @@ router.patch(
   deliveryController.update
 );
 
-// ============================================
-// CANCELAR ENTREGA
-// ============================================
-
 router.patch(
   "/:id/cancel",
   validateObjectId(),
   deliveryController.cancel
 );
-
-// ============================================
-// ELIMINAR ENTREGA
-// ============================================
 
 router.delete(
   "/:id",

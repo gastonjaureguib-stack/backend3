@@ -13,14 +13,7 @@ import {
 
 const router = Router();
 
-// ============================================
-// CONSULTAR PEDIDOS
-// ============================================
-
-router.get(
-  "/",
-  orderController.getAll
-);
+router.get("/", orderController.getAll);
 
 router.get(
   "/:id",
@@ -28,19 +21,11 @@ router.get(
   orderController.getById
 );
 
-// ============================================
-// CREAR PEDIDO
-// ============================================
-
 router.post(
   "/",
   validate(createOrderSchema),
   orderController.create
 );
-
-// ============================================
-// ACTUALIZAR PEDIDO
-// ============================================
 
 router.patch(
   "/:id",
@@ -48,10 +33,6 @@ router.patch(
   validate(updateOrderSchema),
   orderController.update
 );
-
-// ============================================
-// ELIMINAR PEDIDO
-// ============================================
 
 router.delete(
   "/:id",

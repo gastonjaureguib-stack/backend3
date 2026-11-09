@@ -8,11 +8,6 @@ import {
   RESPONSE_STATUS,
 } from "../constants/index.js";
 
-// ============================================
-// SCHEMAS REUTILIZABLES DE SHIPNOW
-// OPENAPI 3.0.3
-// ============================================
-
 const reference = (name) => ({
   $ref: `#/components/schemas/${name}`,
 });
@@ -84,15 +79,7 @@ const deliveryAddress = {
 };
 
 const schemas = {
-  // ==========================================
-  // TIPOS COMPARTIDOS
-  // ==========================================
-
   ObjectId: objectId,
-
-  // ==========================================
-  // USERS
-  // ==========================================
 
   User: {
     type: "object",
@@ -174,10 +161,6 @@ const schemas = {
       },
     },
   },
-
-  // ==========================================
-  // PRODUCTS
-  // ==========================================
 
   Product: {
     type: "object",
@@ -266,10 +249,6 @@ const schemas = {
     },
   },
 
-  // ==========================================
-  // ORDER ITEMS
-  // ==========================================
-
   OrderItem: {
     type: "object",
     required: ["product", "quantity"],
@@ -298,10 +277,6 @@ const schemas = {
       },
     },
   },
-
-  // ==========================================
-  // ORDERS
-  // ==========================================
 
   Order: {
     type: "object",
@@ -419,10 +394,6 @@ const schemas = {
     },
   },
 
-  // ==========================================
-  // DELIVERIES
-  // ==========================================
-
   Delivery: {
     type: "object",
     required: [
@@ -507,10 +478,6 @@ const schemas = {
       deliveryAddress,
     },
   },
-
-  // ==========================================
-  // RESPUESTAS ESTANDARIZADAS
-  // ==========================================
 
   Error: {
     type: "object",

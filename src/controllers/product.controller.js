@@ -3,10 +3,6 @@ import productService from "../services/product.service.js";
 import { RESPONSE_STATUS } from "../constants/index.js";
 
 class ProductController {
-  // ============================================
-  // OBTENER TODOS LOS PRODUCTOS
-  // ============================================
-
   async getAll(req, res, next) {
     try {
       const products = await productService.getAllProducts(
@@ -21,10 +17,6 @@ class ProductController {
       return next(error);
     }
   }
-
-  // ============================================
-  // OBTENER PRODUCTO POR ID
-  // ============================================
 
   async getById(req, res, next) {
     try {
@@ -43,10 +35,6 @@ class ProductController {
     }
   }
 
-  // ============================================
-  // CREAR PRODUCTO
-  // ============================================
-
   async create(req, res, next) {
     try {
       const product = await productService.createProduct(
@@ -62,10 +50,6 @@ class ProductController {
       return next(error);
     }
   }
-
-  // ============================================
-  // ACTUALIZAR DATOS GENERALES
-  // ============================================
 
   async update(req, res, next) {
     try {
@@ -86,10 +70,6 @@ class ProductController {
     }
   }
 
-  // ============================================
-  // AJUSTAR INVENTARIO
-  // ============================================
-
   async adjustStock(req, res, next) {
     try {
       const { id } = req.params;
@@ -109,10 +89,6 @@ class ProductController {
       return next(error);
     }
   }
-
-  // ============================================
-  // ELIMINAR PRODUCTO
-  // ============================================
 
   async delete(req, res, next) {
     try {

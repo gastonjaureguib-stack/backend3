@@ -45,10 +45,6 @@ const PLANTS = [
   },
 ];
 
-// =========================================
-// GENERAR UN PRODUCTO
-// =========================================
-
 export const generateMockProduct = () => {
   const plant = faker.helpers.arrayElement(PLANTS);
   const stock = faker.number.int({ min: 0, max: 50 });
@@ -65,10 +61,6 @@ export const generateMockProduct = () => {
         : PRODUCT_STATUS.OUT_OF_STOCK,
   };
 };
-
-// =========================================
-// GENERAR PRODUCTOS
-// =========================================
 
 export const generateMockProducts = (quantity = 10) => {
   const products = Array.from(

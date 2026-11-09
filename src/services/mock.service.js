@@ -26,10 +26,6 @@ import deliveryRepository from "../repositories/delivery.repository.js";
 import AppError from "../utils/AppError.js";
 import logger from "../config/logger.config.js";
 
-// =========================================
-// VALIDAR CANTIDAD DE MOCKS
-// =========================================
-
 const parseQuantity = (quantity, defaultValue = 10) => {
   if (quantity === undefined) {
     return defaultValue;
@@ -59,10 +55,6 @@ const parseQuantity = (quantity, defaultValue = 10) => {
   return parsedQuantity;
 };
 
-// =========================================
-// HASHEAR CONTRASEÑAS
-// =========================================
-
 const hashPasswords = async (users) => {
   return Promise.all(
     users.map(async (user) => ({
@@ -71,10 +63,6 @@ const hashPasswords = async (users) => {
     }))
   );
 };
-
-// =========================================
-// MOCKS DE USUARIOS
-// =========================================
 
 export const getMockUsers = (quantity) => {
   const qty = parseQuantity(quantity);
@@ -88,10 +76,6 @@ export const getMockUsers = (quantity) => {
   return users;
 };
 
-// =========================================
-// MOCKS DE REPARTIDORES
-// =========================================
-
 export const getMockDrivers = (quantity) => {
   const qty = parseQuantity(quantity);
 
@@ -104,10 +88,6 @@ export const getMockDrivers = (quantity) => {
   return drivers;
 };
 
-// =========================================
-// MOCKS DE PRODUCTOS
-// =========================================
-
 export const getMockProducts = (quantity) => {
   const qty = parseQuantity(quantity);
 
@@ -119,10 +99,6 @@ export const getMockProducts = (quantity) => {
 
   return products;
 };
-
-// =========================================
-// MOCKS DE PEDIDOS
-// =========================================
 
 export const getMockOrders = (quantity) => {
   const qty = parseQuantity(quantity);
@@ -142,10 +118,6 @@ export const getMockOrders = (quantity) => {
 
   return orders;
 };
-
-// =========================================
-// MOCKS DE ENTREGAS
-// =========================================
 
 export const getMockDeliveries = (quantity) => {
   const qty = parseQuantity(quantity);
@@ -174,24 +146,17 @@ export const getMockDeliveries = (quantity) => {
   return deliveries;
 };
 
-// =========================================
-// GUARDAR MOCKS EN MONGODB
-// =========================================
-
 export const seedMockData = async (quantity) => {
-  // Validamos antes de comenzar cualquier operación.
   const qty = parseQuantity(quantity);
 
   logger.info(`Iniciando seed de ShipNow con cantidad ${qty}`);
 
   try {
-    // 1. Generamos clientes y repartidores.
     logger.debug("Generando usuarios y repartidores");
 
     const mockUsers = generateMockUsers(qty);
     const mockDrivers = generateMockDrivers(qty);
 
-    // 2. Hasheamos sus contraseñas.
     const usersWithHashedPasswords =
       await hashPasswords(mockUsers);
 
@@ -200,7 +165,6 @@ export const seedMockData = async (quantity) => {
 
     logger.debug("Contraseñas procesadas correctamente");
 
-    // 3. Guardamos usuarios y repartidores.
     const createdUsers = await userRepository.createMany(
       usersWithHashedPasswords
     );
@@ -213,7 +177,6 @@ export const seedMockData = async (quantity) => {
       `${createdUsers.length} usuarios y ${createdDrivers.length} repartidores persistidos`
     );
 
-    // 4. Generamos y guardamos plantas.
     const mockProducts = generateMockProducts(qty);
 
     const createdProducts = await productRepository.createMany(
@@ -224,7 +187,6 @@ export const seedMockData = async (quantity) => {
       `${createdProducts.length} productos persistidos`
     );
 
-    // 5. Generamos y guardamos pedidos.
     const mockOrders = generateMockOrders(
       qty,
       createdUsers,
@@ -239,7 +201,6 @@ export const seedMockData = async (quantity) => {
       `${createdOrders.length} pedidos creados correctamente`
     );
 
-    // 6. Generamos y guardamos entregas.
     const mockDeliveries = generateMockDeliveries(
       qty,
       createdOrders,
@@ -268,17 +229,14 @@ export const seedMockData = async (quantity) => {
     return result;
   } catch (error) {
     if (error instanceof AppError) {
-      // El middleware global registra el error de dominio.
       throw error;
     }
 
-    // Registramos el error técnico mediante Winston.
     logger.error(
       `Error al generar y guardar mocks: ${error.message}`,
       { stack: error.stack }
     );
 
-    // Mantenemos el error controlado de la entrega 3.
     throw new AppError("MOCK_SEED_FAILED");
   }
 };

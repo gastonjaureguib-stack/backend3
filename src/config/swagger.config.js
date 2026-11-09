@@ -10,16 +10,8 @@ import deliveryPaths from "../docs/paths/delivery.paths.js";
 import mockPaths from "../docs/paths/mock.paths.js";
 import loggerPaths from "../docs/paths/logger.paths.js";
 
-// ============================================
-// CONFIGURACIÓN OPENAPI DE SHIPNOW
-// ============================================
-
 const swaggerConfig = {
   openapi: "3.0.3",
-
-  // ==========================================
-  // INFORMACIÓN GENERAL
-  // ==========================================
 
   info: {
     title: "ShipNow API",
@@ -49,20 +41,12 @@ const swaggerConfig = {
     },
   },
 
-  // ==========================================
-  // SERVIDOR LOCAL
-  // ==========================================
-
   servers: [
     {
       url: `http://localhost:${config.port}`,
       description: "Servidor local de desarrollo",
     },
   ],
-
-  // ==========================================
-  // TAGS
-  // ==========================================
 
   tags: [
     {
@@ -91,10 +75,6 @@ const swaggerConfig = {
     },
   ],
 
-  // ==========================================
-  // ENDPOINTS DOCUMENTADOS
-  // ==========================================
-
   paths: {
     ...userPaths,
     ...productPaths,
@@ -103,10 +83,6 @@ const swaggerConfig = {
     ...mockPaths,
     ...loggerPaths,
   },
-
-  // ==========================================
-  // COMPONENTES REUTILIZABLES
-  // ==========================================
 
   components: {
     schemas,

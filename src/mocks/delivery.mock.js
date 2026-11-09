@@ -9,10 +9,6 @@ import {
 
 import AppError from "../utils/AppError.js";
 
-// =========================================
-// GENERAR UNA ENTREGA
-// =========================================
-
 export const generateMockDelivery = (orders = [], drivers = []) => {
   if (orders.length === 0) {
     throw new AppError("MOCK_ORDERS_REQUIRED");
@@ -39,10 +35,6 @@ export const generateMockDelivery = (orders = [], drivers = []) => {
   };
 };
 
-// =========================================
-// GENERAR VARIAS ENTREGAS
-// =========================================
-
 export const generateMockDeliveries = (
   quantity = 10,
   orders = [],
@@ -61,10 +53,6 @@ export const generateMockDeliveries = (
     generateMockDelivery([order], drivers)
   );
 };
-
-// =========================================
-// GENERAR ENTREGAS SIN PERSISTENCIA
-// =========================================
 
 export const generateStandaloneMockDeliveries = (
   quantity = 10,

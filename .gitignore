@@ -4,6 +4,7 @@ node_modules/
 
 # Variables de entorno
 .env
+.env.test
 .env.local
 .env.production
 

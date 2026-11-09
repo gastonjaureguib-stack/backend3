@@ -1,0 +1,8 @@
+
+{
+  "require": ["./tests/setup/env.js"],
+  "spec": ["tests/functional/**/*.test.js"],
+  "timeout": 15000,
+  "parallel": false,
+  "exit": false
+}

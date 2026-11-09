@@ -1,10 +1,6 @@
 
 import { z } from "zod";
 
-// ============================================
-// CAMPOS GENERALES DEL PRODUCTO
-// ============================================
-
 const productFields = {
   name: z
     .string()
@@ -30,10 +26,6 @@ const productFields = {
     .min(0, "El precio no puede ser negativo"),
 };
 
-// ============================================
-// CREACIÓN DE PRODUCTOS
-// ============================================
-
 export const createProductSchema = z
   .object({
     ...productFields,
@@ -46,10 +38,6 @@ export const createProductSchema = z
   })
   .strict();
 
-// ============================================
-// ACTUALIZACIÓN DE DATOS GENERALES
-// ============================================
-
 export const updateProductSchema = z
   .object(productFields)
   .partial()
@@ -60,10 +48,6 @@ export const updateProductSchema = z
       message: "Debes enviar al menos un campo para actualizar",
     }
   );
-
-// ============================================
-// AJUSTES DE INVENTARIO
-// ============================================
 
 export const adjustProductStockSchema = z
   .object({

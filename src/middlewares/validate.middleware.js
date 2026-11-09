@@ -1,10 +1,6 @@
 
 import AppError from "../utils/AppError.js";
 
-// =========================================
-// MIDDLEWARE DE VALIDACIÓN CON ZOD
-// =========================================
-
 const validate = (schema) => {
   return (req, res, next) => {
     const result = schema.safeParse(req.body);

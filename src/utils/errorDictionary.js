@@ -1,8 +1,6 @@
 
 const errorDictionary = {
-  // =========================================
-  // ERRORES GENERALES
-  // =========================================
+  // Errores generales
 
   INTERNAL_SERVER_ERROR: {
     statusCode: 500,
@@ -28,9 +26,7 @@ const errorDictionary = {
     message: "El ID proporcionado no es válido",
   },
 
-  // =========================================
-  // ERRORES DE USUARIOS
-  // =========================================
+  // Errores de usuarios
 
   USER_NOT_FOUND: {
     statusCode: 404,
@@ -44,9 +40,7 @@ const errorDictionary = {
     message: "Ya existe un usuario con ese email",
   },
 
-  // =========================================
-  // ERRORES DE PRODUCTOS
-  // =========================================
+  // Errores de productos
 
   PRODUCT_NOT_FOUND: {
     statusCode: 404,
@@ -78,9 +72,7 @@ const errorDictionary = {
     message: "No se pudo completar el ajuste de inventario por un conflicto",
   },
 
-  // =========================================
-  // ERRORES DE PEDIDOS
-  // =========================================
+  // Errores de pedidos
 
   ORDER_NOT_FOUND: {
     statusCode: 404,
@@ -124,9 +116,7 @@ const errorDictionary = {
     message: "La operación del pedido entra en conflicto con su entrega",
   },
 
-  // =========================================
-  // ERRORES DE ENTREGAS
-  // =========================================
+  // Errores de entregas
 
   DELIVERY_NOT_FOUND: {
     statusCode: 404,
@@ -170,9 +160,7 @@ const errorDictionary = {
     message: "La entrega no puede eliminarse porque debe conservarse su historial",
   },
 
-  // =========================================
-  // ERRORES DE MOCKS
-  // =========================================
+  // Errores de mocks
 
   INVALID_MOCK_QUANTITY: {
     statusCode: 400,

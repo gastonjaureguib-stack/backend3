@@ -4,10 +4,6 @@ import {
   ORDER_PRIORITY,
 } from "../../constants/index.js";
 
-// ============================================
-// REFERENCIAS Y UTILIDADES
-// ============================================
-
 const schemaRef = (name) => ({
   $ref: `#/components/schemas/${name}`,
 });
@@ -71,10 +67,6 @@ const errorResponse = (description, errors) => ({
     },
   },
 });
-
-// ============================================
-// ERRORES REUTILIZABLES
-// ============================================
 
 const errors = {
   invalidObjectId: {
@@ -142,16 +134,8 @@ const orderIdParameter = {
   schema: schemaRef("ObjectId"),
 };
 
-// ============================================
-// DOCUMENTACIÓN DE ENDPOINTS
-// ============================================
-
 const orderPaths = {
   "/api/orders": {
-    // ========================================
-    // GET /api/orders
-    // ========================================
-
     get: {
       tags: ["Orders"],
       summary: "Listar pedidos",
@@ -171,10 +155,6 @@ const orderPaths = {
         500: internalError,
       },
     },
-
-    // ========================================
-    // POST /api/orders
-    // ========================================
 
     post: {
       tags: ["Orders"],
@@ -260,10 +240,6 @@ const orderPaths = {
   "/api/orders/{id}": {
     parameters: [orderIdParameter],
 
-    // ========================================
-    // GET /api/orders/{id}
-    // ========================================
-
     get: {
       tags: ["Orders"],
       summary: "Obtener pedido por ID",
@@ -292,10 +268,6 @@ const orderPaths = {
         500: internalError,
       },
     },
-
-    // ========================================
-    // PATCH /api/orders/{id}
-    // ========================================
 
     patch: {
       tags: ["Orders"],
@@ -368,10 +340,6 @@ const orderPaths = {
         500: internalError,
       },
     },
-
-    // ========================================
-    // DELETE /api/orders/{id}
-    // ========================================
 
     delete: {
       tags: ["Orders"],

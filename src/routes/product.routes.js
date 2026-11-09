@@ -14,14 +14,7 @@ import {
 
 const router = Router();
 
-// ============================================
-// CONSULTAR PRODUCTOS
-// ============================================
-
-router.get(
-  "/",
-  productController.getAll
-);
+router.get("/", productController.getAll);
 
 router.get(
   "/:id",
@@ -29,19 +22,11 @@ router.get(
   productController.getById
 );
 
-// ============================================
-// CREAR PRODUCTO
-// ============================================
-
 router.post(
   "/",
   validate(createProductSchema),
   productController.create
 );
-
-// ============================================
-// ACTUALIZAR DATOS GENERALES
-// ============================================
 
 router.patch(
   "/:id",
@@ -50,20 +35,12 @@ router.patch(
   productController.update
 );
 
-// ============================================
-// AJUSTAR INVENTARIO
-// ============================================
-
 router.patch(
   "/:id/stock",
   validateObjectId(),
   validate(adjustProductStockSchema),
   productController.adjustStock
 );
-
-// ============================================
-// ELIMINAR PRODUCTO
-// ============================================
 
 router.delete(
   "/:id",
