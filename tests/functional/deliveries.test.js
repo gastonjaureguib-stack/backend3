@@ -93,24 +93,50 @@ describe("Deliveries - Pruebas funcionales", () => {
   ) => {
     const user = await createUser();
     const product = await createProduct();
+    let response;
+    let requestError;
 
-    const response = await request(app)
-      .post("/api/orders")
-      .send({
-        user: user._id.toString(),
-        products: [
-          {
-            product: product._id.toString(),
-            quantity: 2,
-          },
-        ],
-      });
+    try {
+      response = await request(app)
+        .post("/api/orders")
+        .send({
+          user: user._id.toString(),
+          products: [
+            {
+              product: product._id.toString(),
+              quantity: 2,
+            },
+          ],
+        });
+    } catch (error) {
+      requestError = error;
+      throw error;
+    } finally {
+      try {
+        const storedOrders = await Order.find({ user: user._id })
+          .select("_id")
+          .lean();
+
+        for (const order of storedOrders) {
+          orderIds.add(order._id.toString());
+        }
+      } catch (recoveryError) {
+        if (requestError !== undefined) {
+          throw new AggregateError(
+            [requestError, recoveryError],
+            "Fallaron la solicitud de pedido y la recuperación de sus IDs",
+            { cause: requestError }
+          );
+        }
+
+        throw recoveryError;
+      }
+    }
 
     assertSuccess(response, 201);
+    expect(response.body.payload).to.be.an("object");
 
     const orderId = response.body.payload._id;
-
-    orderIds.add(orderId);
 
     if (initialStatus === ORDER_STATUS.PROCESSING) {
       await changeOrderStatus(
@@ -150,16 +176,42 @@ describe("Deliveries - Pruebas funcionales", () => {
     if (driverId !== null) {
       body.driver = driverId;
     }
+    let response;
+    let requestError;
 
-    const response = await request(app)
-      .post("/api/deliveries")
-      .send(body);
+    try {
+      response = await request(app)
+        .post("/api/deliveries")
+        .send(body);
+    } catch (error) {
+      requestError = error;
+      throw error;
+    } finally {
+      try {
+        const storedDeliveries = await Delivery.find({ order: orderId })
+          .select("_id")
+          .lean();
+
+        for (const delivery of storedDeliveries) {
+          deliveryIds.add(delivery._id.toString());
+        }
+      } catch (recoveryError) {
+        if (requestError !== undefined) {
+          throw new AggregateError(
+            [requestError, recoveryError],
+            "Fallaron la solicitud de entrega y la recuperación de sus IDs",
+            { cause: requestError }
+          );
+        }
+
+        throw recoveryError;
+      }
+    }
 
     assertSuccess(response, 201);
+    expect(response.body.payload).to.be.an("object");
 
     const delivery = response.body.payload;
-
-    deliveryIds.add(delivery._id);
 
     return delivery;
   };

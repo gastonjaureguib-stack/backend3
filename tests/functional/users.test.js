@@ -166,10 +166,36 @@ describe("Users - Pruebas funcionales", () => {
   describe("POST /api/users", () => {
     it("debe crear un usuario con contraseña cifrada", async () => {
       const data = createUserData();
+      let response;
+      let storedUser;
+      let requestError;
 
-      const response = await request(app)
-        .post("/api/users")
-        .send(data);
+      try {
+        response = await request(app)
+          .post("/api/users")
+          .send(data);
+      } catch (error) {
+        requestError = error;
+        throw error;
+      } finally {
+        try {
+          storedUser = await User.findOne({ email: data.email });
+
+          if (storedUser) {
+            createdUserIds.add(storedUser._id.toString());
+          }
+        } catch (recoveryError) {
+          if (requestError !== undefined) {
+            throw new AggregateError(
+              [requestError, recoveryError],
+              "Fallaron la solicitud de usuario y la recuperación de su ID",
+              { cause: requestError }
+            );
+          }
+
+          throw recoveryError;
+        }
+      }
 
       assertSuccess(response, 201);
 
@@ -182,13 +208,7 @@ describe("Users - Pruebas funcionales", () => {
         "password"
       );
 
-      const storedUser = await User.findOne({
-        email: data.email,
-      });
-
       expect(storedUser).to.exist;
-
-      createdUserIds.add(storedUser._id.toString());
 
       expect(storedUser.password).to.not.equal(data.password);
 

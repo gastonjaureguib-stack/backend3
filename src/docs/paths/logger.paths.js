@@ -33,7 +33,7 @@ const loggerPaths = {
         de ShipNow.
 
         Este endpoint se registra únicamente
-        cuando NODE_ENV=development.
+        cuando NODE_ENV=development o NODE_ENV=test.
 
         En otros entornos, la ruta no existe
         y se procesa mediante el middleware
@@ -109,7 +109,7 @@ const loggerPaths = {
 
         404: {
           description:
-            "Endpoint no disponible fuera del entorno de desarrollo.",
+            "Endpoint no disponible fuera de los entornos development y test.",
 
           content: {
             "application/json": {

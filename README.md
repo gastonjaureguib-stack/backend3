@@ -82,7 +82,7 @@ El manejo de errores se centraliza mediante `AppError`, `errorDictionary.js` y e
 
 ### Requisitos previos
 
-- Node.js y npm
+- Node.js 24.x y npm >=10. El lockfile actual es versión 3; la validación local utiliza Node.js 24.19.0.
 - MongoDB
 - Git
 
@@ -98,8 +98,12 @@ cd backend3
 ### Instalar dependencias
 
 ```bash
-npm install
+npm ci --include=dev
 ```
+
+Mocha, Chai y Supertest son dependencias de desarrollo. Para ejecutar pruebas no usar `--omit=dev` ni una instalación que omita estas dependencias por `NODE_ENV=production`. `npm test` utiliza el ejecutable local de Mocha; no requiere una instalación global. El mensaje `mocha: not found` indica que ese ejecutable no está disponible; no es un error de MongoDB ni de `.mocharc.json`.
+
+`npm ci` reemplaza `node_modules` en el directorio donde se ejecuta. Para comprobar una instalación limpia conservando una instalación existente, usar un directorio temporal independiente con copias de `package.json`, `package-lock.json`, `.mocharc.json`, `src/` y `tests/`; ejecutar allí `npm ci --include=dev`. Crear también allí el `.env.test` local antes de ejecutar las suites. No versionar ese archivo ni ejecutar suites simultáneamente contra la misma base.
 
 ### Configurar variables de entorno
 
@@ -109,7 +113,7 @@ Ejemplo de configuración local:
 
 ```env
 PORT=8080
-MONGODB_URI=mongodb://127.0.0.1:27017/shipnow
+MONGODB_URI=mongodb://127.0.0.1:27017/shipnow?replicaSet=rs0
 NODE_ENV=development
 ```
 
@@ -123,7 +127,28 @@ El proyecto utiliza transacciones para operaciones que requieren consistencia en
 
 Para utilizar MongoDB localmente con transacciones es necesario configurar un replica set.
 
-Un ejemplo de nombre es `rs0`.
+Para las pruebas, el nombre requerido es `rs0`. Con MongoDB Community y `mongosh` previamente instalados, se puede preparar una instancia local dedicada de esta forma. Si ya existe un servicio en el puerto 27017, revisar su configuración antes: no iniciar otra instancia ni reinicializar un replica set existente.
+
+En PowerShell, crear una carpeta vacía para datos fuera del repositorio e iniciar MongoDB en una terminal:
+
+```powershell
+New-Item -ItemType Directory -Path "$env:LOCALAPPDATA\ShipNowMongo" -Force
+mongod --dbpath "$env:LOCALAPPDATA\ShipNowMongo" --replSet rs0 --bind_ip 127.0.0.1 --port 27017
+```
+
+En otra terminal, abrir `mongosh`:
+
+```bash
+mongosh "mongodb://127.0.0.1:27017/admin?directConnection=true"
+```
+
+Solo si la instancia todavía no tiene un replica set inicializado, ejecutar dentro de `mongosh`:
+
+```javascript
+rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "127.0.0.1:27017" }] })
+```
+
+Comprobar `rs.status()` y `db.hello()`: debe aparecer `setName: "rs0"` e `isWritablePrimary: true`. No ejecutar `rs.initiate()` sobre una instancia ya inicializada. La base `shipnow_test` se crea al realizar la primera escritura; no hace falta migración ni borrar datos.
 
 La instancia de MongoDB debe encontrarse operativa antes de iniciar la aplicación.
 
@@ -180,7 +205,7 @@ Swagger organiza los endpoints en seis grupos:
 5. Mocks
 6. Logger
 
-El endpoint de Logger únicamente se habilita cuando `NODE_ENV=development`.
+El endpoint de Logger se habilita cuando `NODE_ENV=development` o `NODE_ENV=test`; en producción no se registra.
 
 ## Endpoints de la API
 
@@ -250,7 +275,7 @@ La eliminación de entregas está restringida por las reglas de negocio para pre
 |---|---|---|
 | GET | `/api/logger/test` | Probar los niveles del logger |
 
-Disponible únicamente en desarrollo.
+Disponible en los entornos `development` y `test`.
 
 ## Entidades y reglas de negocio
 
@@ -505,7 +530,7 @@ GET /api/logger/test
 
 Permite ejecutar una prueba de los seis niveles de logging.
 
-Disponible únicamente cuando:
+Disponible cuando `NODE_ENV=development` o `NODE_ENV=test`. Por ejemplo:
 
 ```env
 NODE_ENV=development
@@ -532,12 +557,15 @@ tests/
 └── functional/
 ```
 
-Se prueban cuatro módulos principales:
+Se prueban siete módulos:
 
 - Users
 - Products
 - Orders
 - Deliveries
+- Mocks
+- Logger
+- Swagger
 
 ### Cobertura funcional
 
@@ -565,12 +593,46 @@ Las pruebas verifican operaciones de entregas y su relación con los pedidos.
 
 Incluyen creación, consultas, asignación de repartidores, actualizaciones, cancelaciones y restricciones de estados.
 
+#### Mocks
+
+Los 13 casos verifican los cinco GET, estructuras, enums, cantidad predeterminada, cantidades inválidas y fuera del rango seguro, rechazo de `qty=0` en cada GET y en seed, y un seed real con `qty=1`. Este último comprueba cinco documentos, hashes bcrypt y relaciones, y verifica su eliminación selectiva por IDs propios.
+
+#### Logger
+
+Los dos casos verifican la respuesta y las prioridades de los seis niveles en testing, y el 404 de la misma ruta en un proceso de producción aislado. El proceso utiliza un directorio temporal, no carga el `.env` de desarrollo, no importa `server.js` y comprueba que MongoDB permanezca desconectado.
+
+#### Swagger
+
+Los cuatro casos verifican redirección, HTML, especificación OpenAPI servida y rechazo 404 de `/api/docs/package.json` por el middleware instalado. Este rechazo es texto, no una respuesta JSON de `AppError`. No se utiliza un error del parser JSON como supuesto error de Swagger.
+
 ### Ejecutar las pruebas
+
+Crear manualmente `.env.test` en la raíz del proyecto con estas tres variables:
+
+```env
+PORT=3001
+MONGODB_URI=mongodb://127.0.0.1:27017/shipnow_test?replicaSet=rs0
+NODE_ENV=test
+```
+
+`.env.test` está excluido por `.gitignore` y no se debe versionar. `.env.example` contiene ejemplos sin credenciales. Mocha establece `NODE_ENV=test` mediante `tests/setup/env.js`; la configuración exige que `.env.test` exista y contenga las tres variables, y sobrescribe las variables heredadas. No utiliza `.env` como alternativa.
+
+Antes de escribir datos, se exige la URI local indicada, la base `shipnow_test` y `replicaSet=rs0`; las suites también comprueban el nombre de la base conectada. El puerto 3001 es configuración HTTP; Supertest importa la aplicación sin iniciar `src/server.js`.
 
 Desde la raíz del proyecto:
 
 ```bash
 npm test
+```
+
+Para ejecutar un módulo y revisar los archivos antes de la suite completa:
+
+```bash
+npm test -- --grep "Mocks - Pruebas funcionales"
+npm test -- --grep "Logger - Pruebas funcionales"
+npm test -- --grep "Swagger - Pruebas funcionales"
+node --check tests/functional/mocks.test.js
+git diff --check
 ```
 
 Las pruebas utilizan una base de datos independiente de la base principal de desarrollo.
@@ -581,15 +643,23 @@ Base utilizada:
 shipnow_test
 ```
 
-**Importante:** durante su preparación y limpieza, las pruebas pueden eliminar registros de las colecciones utilizadas.
+La limpieza actual usa los IDs registrados por cada suite y filtros `_id: { $in: ... }`; no borra colecciones completas. Se eliminan primero entregas y pedidos, y después productos y usuarios, según corresponda. No ejecutar dos procesos de pruebas al mismo tiempo sobre esta base.
+
+Se corrigieron los siete registros tardíos de IDs: las creaciones HTTP se recuperan por email o nombre con UUID, o por el usuario/pedido exclusivo del test, antes de las aserciones. Si fallan tanto la solicitud como la recuperación, `AggregateError` conserva ambos errores. Una interrupción del proceso o un fallo de MongoDB todavía puede impedir la limpieza.
+
+El seed utiliza wrappers temporales de los cuatro métodos `createMany`: asignan y registran ObjectIds antes de persistir y delegan al método original. En `finally` se restauran los descriptores antes de borrar por IDs en orden Delivery, Order, Product y User. La limpieza intenta todas las entidades, comprueba ausencia de los IDs propios y comunica errores. No depende de IDs en la respuesta ni de diferencias globales de colecciones.
 
 No almacenar información importante en esta base.
 
 Las pruebas que utilizan transacciones requieren MongoDB configurado con replica set.
 
+Con el entorno y el primario de `rs0` validados, ejecutar `npm test` dos veces consecutivas y registrar ambas salidas. No ejecutar procesos de pruebas simultáneos.
+
 ### Resultados de las pruebas funcionales
 
-En la última ejecución local confirmada se obtuvieron los siguientes resultados:
+El 16 de noviembre de 2026 se validó previamente una instalación limpia en un directorio temporal independiente mediante `npm ci --include=dev`, con Node.js 24.19.0 y npm 11.17.0, conservando el `node_modules` del proyecto. En esa instalación pasaron dos veces los 108 tests originales. La causa histórica exacta de `mocha: not found` no pudo acreditarse; no se reprodujo al instalar las dependencias de desarrollo.
+
+Después de completar las correcciones, en el directorio del proyecto se verificaron sintaxis y destino MongoDB: `NODE_ENV=test`, `127.0.0.1:27017`, base `shipnow_test`, replica set `rs0` y primario disponible. Mocks y las dos ejecuciones completas terminaron con código 0:
 
 | Módulo | Pruebas aprobadas |
 |---|---:|
@@ -597,17 +667,24 @@ En la última ejecución local confirmada se obtuvieron los siguientes resultado
 | Products | 28 |
 | Orders | 29 |
 | Deliveries | 37 |
-| **Total** | **108** |
+| Mocks | 13 |
+| Logger | 2 |
+| Swagger | 4 |
+| **Total** | **127** |
 
 Resultado de la ejecución:
 
 ```text
-108 passing (8s)
+Mocks: 13 passing (357ms)
+Primera ejecución completa: 127 passing (10s)
+Segunda ejecución completa: 127 passing (10s)
 ```
 
-**108 pruebas aprobadas, sin fallos en la ejecución registrada.**
+**127 pruebas aprobadas en cada ejecución completa.** El test de seed verificó que sus IDs ya no existían tras la limpieza; después de Mocks y al finalizar las suites, las cuatro colecciones se compararon con la referencia inicial de lectura y quedaron vacías, igual que al inicio. No se utilizó esa comparación para identificar documentos que borrar.
 
-Este resultado corresponde a la última ejecución compartida durante el desarrollo. Para validar el estado definitivo de la entrega, ejecutar nuevamente `npm test` después de cualquier modificación.
+La versión final de 127 tests se ejecutó con las dependencias existentes del proyecto; la instalación limpia registrada corresponde a la validación anterior de los 108 tests. Estas ejecuciones no prueban la recuperación ante una interrupción abrupta ni ante todos los fallos parciales posibles. Ejecutar nuevamente `npm test` después de modificar las suites o la aplicación.
+
+Los cambios de tests fueron preparados con asistencia de Codex y están disponibles para revisión en los archivos y el diff. Antes de entregar, el estudiante debe leerlos, comprender sus aserciones y limpieza, y cumplir la indicación del docente sobre realización personal de los tests.
 
 ## Evidencias de la entrega
 

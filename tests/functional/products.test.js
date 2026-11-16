@@ -263,11 +263,39 @@ describe("Products - Pruebas funcionales", () => {
 
   describe("POST /api/products", () => {
     it("debe crear un producto con stock disponible", async () => {
-      const data = createProductData();
+      const data = createProductData({
+        name: `Producto-${randomUUID()}`,
+      });
+      let response;
+      let storedProduct;
+      let requestError;
 
-      const response = await request(app)
-        .post("/api/products")
-        .send(data);
+      try {
+        response = await request(app)
+          .post("/api/products")
+          .send(data);
+      } catch (error) {
+        requestError = error;
+        throw error;
+      } finally {
+        try {
+          storedProduct = await Product.findOne({ name: data.name });
+
+          if (storedProduct) {
+            productIds.add(storedProduct._id.toString());
+          }
+        } catch (recoveryError) {
+          if (requestError !== undefined) {
+            throw new AggregateError(
+              [requestError, recoveryError],
+              "Fallaron la solicitud de producto y la recuperación de su ID",
+              { cause: requestError }
+            );
+          }
+
+          throw recoveryError;
+        }
+      }
 
       assertSuccess(response, 201);
 
@@ -279,23 +307,43 @@ describe("Products - Pruebas funcionales", () => {
         PRODUCT_STATUS.AVAILABLE
       );
 
-      const storedProduct = await Product.findById(
-        response.body.payload._id
-      );
-
       expect(storedProduct).to.exist;
-
-      productIds.add(storedProduct._id.toString());
     });
 
     it("debe crear un producto sin stock", async () => {
       const data = createProductData({
+        name: `Producto-${randomUUID()}`,
         stock: 0,
       });
+      let response;
+      let requestError;
 
-      const response = await request(app)
-        .post("/api/products")
-        .send(data);
+      try {
+        response = await request(app)
+          .post("/api/products")
+          .send(data);
+      } catch (error) {
+        requestError = error;
+        throw error;
+      } finally {
+        try {
+          const storedProduct = await Product.findOne({ name: data.name });
+
+          if (storedProduct) {
+            productIds.add(storedProduct._id.toString());
+          }
+        } catch (recoveryError) {
+          if (requestError !== undefined) {
+            throw new AggregateError(
+              [requestError, recoveryError],
+              "Fallaron la solicitud de producto y la recuperación de su ID",
+              { cause: requestError }
+            );
+          }
+
+          throw recoveryError;
+        }
+      }
 
       assertSuccess(response, 201);
 
@@ -304,7 +352,6 @@ describe("Products - Pruebas funcionales", () => {
         PRODUCT_STATUS.OUT_OF_STOCK
       );
 
-      productIds.add(response.body.payload._id);
     });
 
     it("debe rechazar campos obligatorios faltantes", async () => {

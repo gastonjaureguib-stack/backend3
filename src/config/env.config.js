@@ -3,10 +3,22 @@ import dotenv from "dotenv";
 
 const isTestEnvironment = process.env.NODE_ENV === "test";
 
-dotenv.config({
+const envResult = dotenv.config({
   path: isTestEnvironment ? ".env.test" : ".env",
   override: isTestEnvironment,
 });
+
+if (isTestEnvironment) {
+  if (envResult.error) {
+    throw new Error("No se pudo cargar .env.test");
+  }
+
+  for (const name of ["PORT", "MONGODB_URI", "NODE_ENV"]) {
+    if (!envResult.parsed?.[name]?.trim()) {
+      throw new Error(`Falta la variable ${name} en .env.test`);
+    }
+  }
+}
 
 const requiredEnvVars = [
   "PORT",
@@ -60,6 +72,10 @@ if (isTestEnvironment) {
     throw new Error(
       "Las pruebas deben utilizar MongoDB local y la base shipnow_test"
     );
+  }
+
+  if ([...mongoUrl.searchParams.keys()].some((key) => key.toLowerCase() === "dbname")) {
+    throw new Error("La URI de testing no admite sobrescribir la base mediante dbName");
   }
 
   if (mongoUrl.searchParams.get("replicaSet") !== "rs0") {

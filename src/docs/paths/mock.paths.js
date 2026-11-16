@@ -70,7 +70,7 @@ const errorResponse = (description, errors) => ({
 
 const invalidQuantity = {
   code: "INVALID_MOCK_QUANTITY",
-  message: "La cantidad solicitada no es válida",
+  message: "La cantidad de mocks debe ser un número entero positivo",
 };
 
 const internalError = errorResponse(
@@ -282,26 +282,27 @@ const mockPaths = {
                     type: "object",
                     description:
                       "Resultado de la inserción, organizado por tipo de entidad.",
+                    required: ["users", "drivers", "products", "orders", "deliveries"],
                     properties: {
                       users: {
-                        type: "array",
-                        items: schemaRef("User"),
+                        type: "integer",
+                        minimum: 0,
                       },
                       drivers: {
-                        type: "array",
-                        items: schemaRef("User"),
+                        type: "integer",
+                        minimum: 0,
                       },
                       products: {
-                        type: "array",
-                        items: schemaRef("Product"),
+                        type: "integer",
+                        minimum: 0,
                       },
                       orders: {
-                        type: "array",
-                        items: schemaRef("Order"),
+                        type: "integer",
+                        minimum: 0,
                       },
                       deliveries: {
-                        type: "array",
-                        items: schemaRef("Delivery"),
+                        type: "integer",
+                        minimum: 0,
                       },
                     },
                   },
@@ -318,27 +319,27 @@ const mockPaths = {
             {
               code: "MOCK_DATA_REQUIRED",
               message:
-                "Se requieren datos para generar los registros",
+                "Se necesitan usuarios y productos para generar pedidos simulados",
             },
             {
               code: "MOCK_PRODUCT_OUT_OF_STOCK",
               message:
-                "No hay stock suficiente para generar el pedido",
+                "Se necesita al menos un producto con stock para generar pedidos",
             },
             {
               code: "MOCK_ORDERS_REQUIRED",
               message:
-                "Se requieren pedidos para generar entregas",
+                "Se necesitan pedidos para generar entregas simuladas",
             },
             {
               code: "MOCK_DRIVERS_REQUIRED",
               message:
-                "Se requieren repartidores para generar entregas",
+                "Se necesita al menos un repartidor para generar entregas simuladas",
             },
             {
               code: "MOCK_INSUFFICIENT_ORDERS",
               message:
-                "No hay pedidos suficientes para generar entregas",
+                "No se pueden generar más entregas que pedidos disponibles",
             },
           ]
         ),
@@ -349,7 +350,7 @@ const mockPaths = {
             {
               code: "MOCK_SEED_FAILED",
               message:
-                "No fue posible insertar los datos simulados",
+                "Error interno del servidor",
             },
             {
               code: "INTERNAL_SERVER_ERROR",

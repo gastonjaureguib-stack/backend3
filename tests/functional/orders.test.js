@@ -91,13 +91,40 @@ describe("Orders - Pruebas funcionales", () => {
     product,
     quantity = 2
   ) => {
-    const response = await request(app)
-      .post("/api/orders")
-      .send(createOrderData(user, product, quantity));
+    let response;
+    let requestError;
+
+    try {
+      response = await request(app)
+        .post("/api/orders")
+        .send(createOrderData(user, product, quantity));
+    } catch (error) {
+      requestError = error;
+      throw error;
+    } finally {
+      try {
+        const storedOrders = await Order.find({ user: user._id })
+          .select("_id")
+          .lean();
+
+        for (const order of storedOrders) {
+          orderIds.add(order._id.toString());
+        }
+      } catch (recoveryError) {
+        if (requestError !== undefined) {
+          throw new AggregateError(
+            [requestError, recoveryError],
+            "Fallaron la solicitud de pedido y la recuperación de sus IDs",
+            { cause: requestError }
+          );
+        }
+
+        throw recoveryError;
+      }
+    }
 
     assertSuccess(response, 201);
-
-    orderIds.add(response.body.payload._id);
+    expect(response.body.payload).to.be.an("object");
 
     return response.body.payload;
   };
@@ -283,25 +310,51 @@ describe("Orders - Pruebas funcionales", () => {
       const secondProduct = await createProduct({
         price: 50,
       });
+      let response;
+      let requestError;
 
-      const response = await request(app)
-        .post("/api/orders")
-        .send({
-          user: user._id.toString(),
-          products: [
-            {
-              product: firstProduct._id.toString(),
-              quantity: 2,
-            },
-            {
-              product: secondProduct._id.toString(),
-              quantity: 3,
-            },
-          ],
-        });
+      try {
+        response = await request(app)
+          .post("/api/orders")
+          .send({
+            user: user._id.toString(),
+            products: [
+              {
+                product: firstProduct._id.toString(),
+                quantity: 2,
+              },
+              {
+                product: secondProduct._id.toString(),
+                quantity: 3,
+              },
+            ],
+          });
+      } catch (error) {
+        requestError = error;
+        throw error;
+      } finally {
+        try {
+          const storedOrders = await Order.find({ user: user._id })
+            .select("_id")
+            .lean();
+
+          for (const order of storedOrders) {
+            orderIds.add(order._id.toString());
+          }
+        } catch (recoveryError) {
+          if (requestError !== undefined) {
+            throw new AggregateError(
+              [requestError, recoveryError],
+              "Fallaron la solicitud de pedido y la recuperación de sus IDs",
+              { cause: requestError }
+            );
+          }
+
+          throw recoveryError;
+        }
+      }
 
       assertSuccess(response, 201);
-      orderIds.add(response.body.payload._id);
 
       expect(response.body.payload.total).to.equal(350);
 
