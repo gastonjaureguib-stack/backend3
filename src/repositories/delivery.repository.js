@@ -1,7 +1,20 @@
 
 import Delivery from "../models/delivery.model.js";
+import { DELIVERY_STATUS } from "../constants/index.js";
 
 class DeliveryRepository {
+  async addReceipt(id, metadata) {
+    return Delivery.findOneAndUpdate(
+      { _id: id, status: DELIVERY_STATUS.DELIVERED },
+      { $push: { receipts: metadata } },
+      { returnDocument: "after", runValidators: true }
+    ).select("-__v");
+  }
+
+  async hasReceipt(id, fileId) {
+    return Delivery.exists({ _id: id, "receipts._id": fileId });
+  }
+
   async getAll(options = {}) {
     const { session = null } = options;
 

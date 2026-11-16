@@ -3,8 +3,22 @@ import bcrypt from "bcrypt";
 
 import userRepository from "../repositories/user.repository.js";
 import AppError from "../utils/AppError.js";
+import { persistFile } from "./file.service.js";
+import { discardFiles } from "../utils/file.utils.js";
 
 class UserService {
+  async addDocument(id, file, documentType) {
+    return persistFile({
+      file,
+      documentType,
+      entityId: id,
+      entityType: "User",
+      append: (metadata) => userRepository.addDocument(id, metadata),
+      isAssociated: (fileId) => userRepository.hasDocument(id, fileId),
+      missingError: () => new AppError("USER_NOT_FOUND"),
+    });
+  }
+
   async getAllUsers() {
     return userRepository.getAll();
   }
@@ -89,7 +103,13 @@ class UserService {
       throw new AppError("USER_NOT_FOUND");
     }
 
-    return userRepository.delete(id);
+    const deleted = await userRepository.delete(id);
+
+    if (deleted) {
+      await discardFiles((deleted.documents ?? []).map((file) => file.path));
+    }
+
+    return deleted;
   }
 }
 

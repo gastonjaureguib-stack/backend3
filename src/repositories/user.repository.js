@@ -2,6 +2,18 @@
 import User from "../models/user.model.js";
 
 class UserRepository {
+  async addDocument(id, metadata) {
+    return User.findByIdAndUpdate(
+      id,
+      { $push: { documents: metadata } },
+      { returnDocument: "after", runValidators: true }
+    ).select("-password -__v");
+  }
+
+  async hasDocument(id, fileId) {
+    return User.exists({ _id: id, "documents._id": fileId });
+  }
+
   async getAll(options = {}) {
     const { session = null } = options;
 

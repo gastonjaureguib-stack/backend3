@@ -1,5 +1,6 @@
 
 import { DELIVERY_STATUS } from "../../constants/index.js";
+import { uploadOperation } from "../upload.js";
 
 const schemaRef = (name) => ({
   $ref: `#/components/schemas/${name}`,
@@ -150,6 +151,7 @@ const orderIdParameter = {
 };
 
 const deliveryPaths = {
+  "/api/deliveries/{id}/receipts": uploadOperation("Deliveries", "receipt", "DELIVERY_NOT_FOUND"),
   "/api/deliveries": {
     get: {
       tags: ["Deliveries"],

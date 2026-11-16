@@ -1,4 +1,6 @@
 
+import { uploadOperation } from "../upload.js";
+
 const schemaRef = (name) => ({
   $ref: `#/components/schemas/${name}`,
 });
@@ -64,6 +66,7 @@ const userIdParameter = {
 };
 
 const userPaths = {
+  "/api/users/{id}/documents": uploadOperation("Users", "document", "USER_NOT_FOUND"),
   "/api/users": {
     get: {
       tags: ["Users"],

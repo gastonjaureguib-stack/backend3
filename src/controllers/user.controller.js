@@ -1,6 +1,30 @@
 import userService from "../services/user.service.js";
 
 class UserController {
+  async prepareDocument(req, res, next) {
+    try {
+      await userService.getUserById(req.params.id);
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async addDocument(req, res, next) {
+    try {
+      const metadata = await userService.addDocument(
+        req.params.id, req.file, req.body.documentType
+      );
+      res.status(201).json({
+        status: "success",
+        message: "Documento cargado correctamente",
+        payload: metadata,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getAll(req, res, next) {
     try {
       const users = await userService.getAllUsers();

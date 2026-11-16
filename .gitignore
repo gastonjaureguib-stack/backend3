@@ -1,6 +1,7 @@
 
 # Dependencias
 node_modules/
+uploads/
 
 # Variables de entorno
 .env

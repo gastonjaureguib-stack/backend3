@@ -1,8 +1,10 @@
 import mongoose from "mongoose";
 import { DELIVERY_STATUS } from "../constants/index.js";
+import fileMetadataSchema from "./fileMetadata.schema.js";
 
 const deliverySchema = new mongoose.Schema(
   {
+    receipts: { type: [fileMetadataSchema], default: [] },
     order: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Order",

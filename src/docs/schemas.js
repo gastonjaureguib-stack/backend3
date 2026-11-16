@@ -5,6 +5,7 @@ import {
   ORDER_STATUS,
   ORDER_PRIORITY,
   DELIVERY_STATUS,
+  DOCUMENT_TYPES,
   RESPONSE_STATUS,
 } from "../constants/index.js";
 
@@ -79,6 +80,28 @@ const deliveryAddress = {
 };
 
 const schemas = {
+  FileMetadata: {
+    type: "object",
+    required: ["_id", "originalName", "filename", "path", "mimeType", "size", "uploadedAt"],
+    properties: {
+      _id: reference("ObjectId"),
+      originalName: { type: "string", example: "comprobante.pdf" },
+      filename: { type: "string", example: "31d781fd-a99a-4ff6-b79d-4d4c5312429c.pdf" },
+      path: { type: "string", example: "deliveries/receipts/31d781fd-a99a-4ff6-b79d-4d4c5312429c.pdf" },
+      mimeType: { type: "string", enum: ["application/pdf", "image/jpeg", "image/png"] },
+      size: { type: "integer", minimum: 1, maximum: 5242880 },
+      uploadedAt: timestamp,
+    },
+  },
+  UserDocument: {
+    allOf: [
+      reference("FileMetadata"),
+      {
+        type: "object", required: ["documentType"],
+        properties: { documentType: { type: "string", enum: DOCUMENT_TYPES } },
+      },
+    ],
+  },
   ObjectId: objectId,
 
   User: {
@@ -93,6 +116,7 @@ const schemas = {
     properties: {
       _id: reference("ObjectId"),
       ...userProperties,
+      documents: { type: "array", items: reference("UserDocument") },
       role: {
         type: "string",
         enum: Object.values(USER_ROLES),
@@ -403,6 +427,7 @@ const schemas = {
       "deliveryAddress",
     ],
     properties: {
+      receipts: { type: "array", items: reference("FileMetadata") },
       _id: reference("ObjectId"),
       order: reference("ObjectId"),
       driver: {
@@ -429,6 +454,7 @@ const schemas = {
       "deliveryAddress",
     ],
     properties: {
+      receipts: { type: "array", items: reference("FileMetadata") },
       _id: reference("ObjectId"),
       order: {
         allOf: [reference("Order")],

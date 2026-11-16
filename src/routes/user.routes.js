@@ -5,6 +5,7 @@ import userController from "../controllers/user.controller.js";
 
 import validateObjectId from "../middlewares/validateObjectId.middleware.js";
 import validate from "../middlewares/validate.middleware.js";
+import { uploadDocument } from "../middlewares/upload.middleware.js";
 
 import {
   createUserSchema,
@@ -12,6 +13,14 @@ import {
 } from "../validations/user.validation.js";
 
 const router = Router();
+
+router.post(
+  "/:id/documents",
+  validateObjectId(),
+  userController.prepareDocument,
+  uploadDocument,
+  userController.addDocument
+);
 
 router.get("/", userController.getAll);
 

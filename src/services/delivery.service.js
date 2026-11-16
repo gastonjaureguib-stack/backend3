@@ -12,6 +12,7 @@ import {
 } from "../constants/index.js";
 
 import AppError from "../utils/AppError.js";
+import { persistFile } from "./file.service.js";
 
 const ALLOWED_TRANSITIONS = Object.freeze({
   [DELIVERY_STATUS.PENDING]: [
@@ -35,6 +36,30 @@ const ELIGIBLE_ORDER_STATUSES = [
 ];
 
 class DeliveryService {
+  async getReceiptTarget(id) {
+    const delivery = await this.getDeliveryById(id);
+
+    if (delivery.status !== DELIVERY_STATUS.DELIVERED) {
+      throw new AppError("DELIVERY_RECEIPT_NOT_ALLOWED");
+    }
+
+    return delivery;
+  }
+
+  async addReceipt(id, file) {
+    return persistFile({
+      file,
+      entityId: id,
+      entityType: "Delivery",
+      append: (metadata) => deliveryRepository.addReceipt(id, metadata),
+      isAssociated: (fileId) => deliveryRepository.hasReceipt(id, fileId),
+      missingError: async () => {
+        await this.getDeliveryById(id);
+        return new AppError("DELIVERY_RECEIPT_NOT_ALLOWED");
+      },
+    });
+  }
+
   async validateDriver(driverId, session) {
     if (!mongoose.isValidObjectId(driverId)) {
       throw new AppError("INVALID_OBJECT_ID");

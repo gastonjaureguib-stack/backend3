@@ -1,4 +1,9 @@
 import { z } from "zod";
+import { DOCUMENT_TYPES } from "../constants/index.js";
+
+export const documentUploadSchema = z.object({
+  documentType: z.enum(DOCUMENT_TYPES),
+}).strict();
 
 export const createUserSchema = z.object({
   firstName: z

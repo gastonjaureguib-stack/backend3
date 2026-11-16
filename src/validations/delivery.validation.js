@@ -1,6 +1,8 @@
 
 import { z } from "zod";
 
+export const receiptUploadSchema = z.object({}).strict();
+
 import { DELIVERY_STATUS } from "../constants/index.js";
 
 const objectIdSchema = z

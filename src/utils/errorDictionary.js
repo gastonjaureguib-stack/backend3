@@ -1,5 +1,29 @@
 
 const errorDictionary = {
+  FILE_REQUIRED: {
+    statusCode: 400, code: "FILE_REQUIRED", message: "Debes adjuntar un archivo",
+  },
+  INVALID_FILE_TYPE: {
+    statusCode: 400, code: "INVALID_FILE_TYPE", message: "El archivo debe ser PDF, JPG, JPEG o PNG válido",
+  },
+  FILE_TOO_LARGE: {
+    statusCode: 413, code: "FILE_TOO_LARGE", message: "El archivo supera el límite de 5 MiB",
+  },
+  UNEXPECTED_FILE: {
+    statusCode: 400, code: "UNEXPECTED_FILE", message: "Campo de archivo incorrecto o archivo adicional",
+  },
+  INVALID_DOCUMENT_TYPE: {
+    statusCode: 400, code: "INVALID_DOCUMENT_TYPE", message: "documentType debe ser identification, proof_of_address u other",
+  },
+  INVALID_UPLOAD: {
+    statusCode: 400, code: "INVALID_UPLOAD", message: "La solicitud multipart no es válida",
+  },
+  FILE_STORAGE_ERROR: {
+    statusCode: 500, code: "FILE_STORAGE_ERROR", message: "No se pudo almacenar el archivo",
+  },
+  DELIVERY_RECEIPT_NOT_ALLOWED: {
+    statusCode: 409, code: "DELIVERY_RECEIPT_NOT_ALLOWED", message: "Solo se admiten comprobantes en entregas delivered",
+  },
   // Errores generales
 
   INTERNAL_SERVER_ERROR: {

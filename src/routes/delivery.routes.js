@@ -5,6 +5,7 @@ import deliveryController from "../controllers/delivery.controller.js";
 
 import validateObjectId from "../middlewares/validateObjectId.middleware.js";
 import validate from "../middlewares/validate.middleware.js";
+import { uploadReceipt } from "../middlewares/upload.middleware.js";
 
 import {
   createDeliverySchema,
@@ -12,6 +13,14 @@ import {
 } from "../validations/delivery.validation.js";
 
 const router = Router();
+
+router.post(
+  "/:id/receipts",
+  validateObjectId(),
+  deliveryController.prepareReceipt,
+  uploadReceipt,
+  deliveryController.addReceipt
+);
 
 router.get("/", deliveryController.getAll);
 

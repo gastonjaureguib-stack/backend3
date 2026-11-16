@@ -1,8 +1,14 @@
 import mongoose from "mongoose";
 import { USER_ROLES } from "../constants/index.js";
+import fileMetadataSchema from "./fileMetadata.schema.js";
 
 const userSchema = new mongoose.Schema(
   {
+    documents: {
+      type: [fileMetadataSchema],
+      default: [],
+      validate: (documents) => documents.every((file) => Boolean(file.documentType)),
+    },
     firstName: {
       type: String,
       required: true,

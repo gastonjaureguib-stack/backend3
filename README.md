@@ -753,4 +753,106 @@ Incluye:
 - Documentación Swagger/OpenAPI 3.0.3.
 - Testing funcional con Mocha, Chai y Supertest.
 
-**Estado:** desarrollo académico actualizado hasta la Entrega 6.
+**Estado:** desarrollo académico actualizado hasta la Pre-entrega 7.
+
+## Pre-entrega 7 — Documentos y comprobantes
+
+Se incorpora Multer como dependencia de producción. `npm ci --include=dev` instala también las herramientas necesarias para las pruebas. No se requieren nuevas variables de entorno para las cargas.
+
+### Endpoints multipart
+
+| Método y endpoint | Archivo obligatorio | Campos de texto | Condición |
+|---|---|---|---|
+| POST `/api/users/:id/documents` | `document` | `documentType` obligatorio | Usuario existente |
+| POST `/api/deliveries/:id/receipts` | `receipt` | Ninguno | Entrega existente en estado `delivered` |
+
+`documentType` admite exactamente `identification` (identificación), `proof_of_address` (comprobante de domicilio) y `other` (otro documento). Se agrega un archivo por solicitud; los adjuntos anteriores se conservan. Los archivos no se envían como JSON ni como base64.
+
+Se permiten PDF (`application/pdf`, `.pdf`), JPEG (`image/jpeg`, `.jpg` o `.jpeg`) y PNG (`image/png`, `.png`), con un máximo de **5 MiB por archivo: 5242880 bytes**. Se comprueban extensión, MIME declarado y firma básica del contenido. Esta comprobación no es un antivirus ni una validación completa del formato.
+
+Ejemplos para PowerShell con IDs existentes y archivos locales:
+
+```powershell
+curl.exe -X POST "http://localhost:8080/api/users/ID_USUARIO/documents" -F "documentType=identification" -F "document=@C:/archivos/identificacion.pdf;type=application/pdf"
+curl.exe -X POST "http://localhost:8080/api/deliveries/ID_ENTREGA/receipts" -F "receipt=@C:/archivos/comprobante.png;type=image/png"
+```
+
+El cliente multipart genera el boundary; no establecer manualmente un encabezado Content-Type sin boundary. Se puede enviar `documentType` antes o después del archivo. Los nombres de campo son exactos y no se admiten archivos adicionales.
+
+### Almacenamiento y metadatos
+
+`src/config/multer.config.js` centraliza `buildStorage`, `multer.diskStorage`, filtros y límites. Los directorios se crean automáticamente al recibir la primera carga:
+
+```text
+uploads/
+├── users/documents/
+└── deliveries/receipts/
+```
+
+La raíz de producción/desarrollo se resuelve respecto del proyecto, sin depender del directorio de ejecución. Los nombres almacenados utilizan UUID y extensión normalizada; no se usan rutas enviadas por el cliente. La cuenta que ejecuta Node debe poder crear y escribir esas carpetas. `uploads/` está excluido de Git y no se publica mediante `express.static`.
+
+User guarda `documents` y Delivery guarda `receipts`. Ambos usan el mismo subesquema: `_id`, `originalName`, `filename`, `path` relativo, `mimeType`, `size` y `uploadedAt`; los documentos de usuario incluyen además `documentType`. MongoDB guarda metadatos, no binarios. Las cargas no modifican contraseñas, roles, stock ni estados.
+
+Una respuesta exitosa devuelve HTTP 201:
+
+```json
+{
+  "status": "success",
+  "message": "Documento cargado correctamente",
+  "payload": {
+    "_id": "507f1f77bcf86cd799439011",
+    "originalName": "identificacion.pdf",
+    "filename": "31d781fd-a99a-4ff6-b79d-4d4c5312429c.pdf",
+    "path": "users/documents/31d781fd-a99a-4ff6-b79d-4d4c5312429c.pdf",
+    "mimeType": "application/pdf",
+    "size": 2048,
+    "documentType": "identification",
+    "uploadedAt": "2026-11-16T12:00:00.000Z"
+  }
+}
+```
+
+Para entregas el mensaje es `Comprobante cargado correctamente` y no se incluye `documentType`. La ruta relativa identifica almacenamiento interno: no es una URL de descarga.
+
+### Estados, errores y limpieza
+
+Los comprobantes utilizan una operación específica de repositorio, con `$push` y condición atómica `status: delivered`. No pasan por `updateDelivery`, que conserva sus restricciones originales para entregas finalizadas. Los estados `pending`, `assigned`, `in_transit` y `cancelled` se rechazan con 409.
+
+| HTTP | Códigos posibles |
+|---|---|
+| 400 | `INVALID_OBJECT_ID`, `FILE_REQUIRED`, `INVALID_FILE_TYPE`, `UNEXPECTED_FILE`, `INVALID_DOCUMENT_TYPE`, `INVALID_UPLOAD` |
+| 404 | `USER_NOT_FOUND`, `DELIVERY_NOT_FOUND` |
+| 409 | `DELIVERY_RECEIPT_NOT_ALLOWED` |
+| 413 | `FILE_TOO_LARGE` |
+| 500 | `FILE_STORAGE_ERROR`, `INTERNAL_SERVER_ERROR` |
+
+Los errores mantienen `{ status, code, message }`. Los detalles internos de los 500 quedan en Winston, no en la respuesta. Se registran cargas exitosas con entidad, ID del archivo, MIME y tamaño; los rechazos se registran mediante el middleware global. No se registra contenido documental.
+
+Se comprueban ID, existencia y estado antes de escribir archivos, y se revalida la asociación al persistir. Ante validación rechazada o escritura definitivamente fallida se eliminan los archivos propios de la solicitud. Si MongoDB devuelve un resultado incierto, se consulta la asociación: un archivo asociado se conserva. Una lectura vacía por sí sola tampoco demuestra que una escritura incierta no pueda confirmarse; en ese caso, o si no se puede verificar, el archivo se conserva y se registra el incidente. No se promete atomicidad entre MongoDB y disco.
+
+Al eliminar un usuario se limpian los archivos enumerados por el documento eliminado. Los fallos de limpieza se registran y no cambian el contrato exitoso de eliminación existente. Una interrupción abrupta o un resultado incierto puede requerir revisar los archivos conservados; no se agregó un proceso automático de borrado ni herramientas administrativas.
+
+### Swagger y pruebas
+
+Los dos endpoints están documentados en `/api/docs`, con `multipart/form-data`, campos requeridos, enum de `documentType`, formatos, límite y respuestas de error.
+
+`tests/functional/uploads.test.js` utiliza exclusivamente `shipnow_test` con `rs0` y primario disponible. En `NODE_ENV=test`, el almacenamiento usa una carpeta temporal única por proceso bajo el directorio temporal del sistema; las pruebas comprueban ese aislamiento, eliminan sus documentos por IDs propios y retiran su carpeta temporal. No se utiliza `uploads/` del proyecto durante las pruebas.
+
+```bash
+npm test -- --grep "Uploads - Pruebas funcionales"
+npm test
+git diff --check
+```
+
+La suite cubre persistencia de los cuatro formatos, asociación de comprobantes, errores centralizados, tamaño, campos, firmas, estados, eliminación de usuario y compensación ante fallos. También comprueba que una escritura incierta no provoque el borrado de archivos potencialmente asociados. Se conservaron sin cambios los tests de la Entrega 6.
+
+Validación realizada el 16 de noviembre de 2026 sobre `shipnow_test`, con primario de `rs0` disponible:
+
+```text
+Uploads: 21 passing (983ms)
+Suite completa: 148 passing (11s)
+```
+
+Las 127 pruebas de la Entrega 6 y las 21 nuevas finalizaron con código 0. Los casos exitosos comprobaron contenido de archivos y metadatos MongoDB; los rechazos verificaron el formato centralizado y la limpieza. Las simulaciones de errores se limitaron a los repositorios durante cada test y se restauraron mediante `finally`.
+
+No se incorporó autenticación nueva, descarga de archivos, frontend ni almacenamiento en la nube. Los endpoints mantienen las limitaciones de acceso del proyecto actual.

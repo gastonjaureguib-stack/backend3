@@ -2,8 +2,18 @@
 import AppError from "../utils/AppError.js";
 import errorDictionary from "../utils/errorDictionary.js";
 import logger from "../config/logger.config.js";
+import multer from "multer";
 
 const errorHandler = (error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    const code = error.code === "LIMIT_FILE_SIZE"
+      ? "FILE_TOO_LARGE"
+      : ["LIMIT_UNEXPECTED_FILE", "LIMIT_FILE_COUNT"].includes(error.code)
+        ? "UNEXPECTED_FILE"
+        : "INVALID_UPLOAD";
+    error = new AppError(code);
+  }
+
   if (res.headersSent) {
     return next(error);
   }
@@ -42,6 +52,7 @@ const errorHandler = (error, req, res, next) => {
       {
         ...errorContext,
         errorMessage: error.message,
+        cause: error.cause?.message,
         stack: error.stack,
       }
     );

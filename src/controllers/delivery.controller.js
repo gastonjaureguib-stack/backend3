@@ -3,6 +3,28 @@ import deliveryService from "../services/delivery.service.js";
 import { RESPONSE_STATUS } from "../constants/index.js";
 
 class DeliveryController {
+  async prepareReceipt(req, res, next) {
+    try {
+      await deliveryService.getReceiptTarget(req.params.id);
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async addReceipt(req, res, next) {
+    try {
+      const metadata = await deliveryService.addReceipt(req.params.id, req.file);
+      res.status(201).json({
+        status: RESPONSE_STATUS.SUCCESS,
+        message: "Comprobante cargado correctamente",
+        payload: metadata,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getAll(req, res, next) {
     try {
       const deliveries =
